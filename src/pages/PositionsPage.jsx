@@ -8,6 +8,7 @@ import {
   serverTimestamp,
   doc,
   deleteDoc,
+  setDoc,
 } from 'firebase/firestore';
 import {
   PlusIcon,
@@ -51,24 +52,62 @@ const RenderGainLoss = ({ value, formatter = (val) => val }) => {
   return <span className={colorClass}>{formatter(value)}</span>;
 };
 
+// --- StrategySelector Component ---
+const StrategySelector = ({ user, ticker, currentStrategy }) => {
+  const [strategy, setStrategy] = useState(currentStrategy);
+
+  // Update local state if the prop changes
+  useEffect(() => {
+    setStrategy(currentStrategy);
+  }, [currentStrategy]);
+
+  const handleChange = async (e) => {
+    const newStrategy = e.target.value;
+    setStrategy(newStrategy);
+
+    if (!user || !ticker) return;
+
+    // Save/Update the strategy in the new collection
+    const docPath = doc(db, 'users', user.uid, 'strategies', ticker);
+    try {
+      // Use 'Long' as default if nothing is selected
+      await setDoc(docPath, { strategy: newStrategy || 'Long' });
+    } catch (err) {
+      console.error('Failed to save strategy: ', err);
+    }
+  };
+
+  return (
+    <select
+      value={strategy}
+      onChange={handleChange}
+      className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+    >
+      <option value="">Select...</option>
+      <option value="Long">Long</option>
+      <option value="Momentum">Momentum</option>
+      <option value="RSU">RSU</option>
+      <option value="Commodity">Commodity</option>
+    </select>
+  );
+};
+
 // --- AddPositionRow Component ---
 const AddPositionRow = ({ user }) => {
   const [ticker, setTicker] = useState('');
   const [amount, setAmount] = useState('');
   const [fillPrice, setFillPrice] = useState('');
   const [date, setDate] = useState('');
-  const [type, setType] = useState('Long'); // State for position type
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isFormValid = ticker && amount && fillPrice && date && type;
+  const isFormValid = ticker && amount && fillPrice && date;
 
   const resetForm = () => {
     setTicker('');
     setAmount('');
     setFillPrice('');
     setDate('');
-    setType('Long');
     setError(null);
     setIsSubmitting(false);
   };
@@ -99,7 +138,6 @@ const AddPositionRow = ({ user }) => {
         amount: parseFloat(amount),
         fillPrice: parseFloat(fillPrice),
         date: date,
-        type: type, // Save the type
         createdAt: serverTimestamp(),
       });
       resetForm();
@@ -110,21 +148,16 @@ const AddPositionRow = ({ user }) => {
     }
   };
 
-  const handleSetToday = () => {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0'); // Jan is 0
-    const dd = String(today.getDate()).padStart(2, '0');
-    setDate(`${yyyy}-${mm}-${dd}`);
-  };
-
+  // This single row will be styled to stack on mobile
   return (
-    <tr className="bg-gray-50 align-top">
-      {/* Spacer for expand button */}
-      <td className="px-6 py-4"></td>
+    <tr className="block bg-gray-50 align-top md:table-row">
+      {/* Spacer */}
+      <td className="hidden px-3 py-3 md:table-cell"></td>
       {/* Ticker Input */}
-      <td className="whitespace-nowrap px-6 py-4">
+      <td className="block whitespace-nowrap px-3 py-2 md:table-cell md:py-3">
+        <label htmlFor="ticker" className="text-xs font-medium text-gray-500 md:hidden">Ticker</label>
         <input
+          id="ticker"
           type="text"
           value={ticker}
           onChange={(e) => setTicker(e.target.value)}
@@ -133,8 +166,10 @@ const AddPositionRow = ({ user }) => {
         />
       </td>
       {/* Amount Input */}
-      <td className="whitespace-nowrap px-6 py-4">
+      <td className="block whitespace-nowrap px-3 py-2 md:table-cell md:py-3">
+        <label htmlFor="amount" className="text-xs font-medium text-gray-500 md:hidden">Amount</label>
         <input
+          id="amount"
           type="number"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
@@ -143,8 +178,10 @@ const AddPositionRow = ({ user }) => {
         />
       </td>
       {/* Fill Price Input */}
-      <td className="whitespace-nowrap px-6 py-4">
+      <td className="block whitespace-nowrap px-3 py-2 md:table-cell md:py-3">
+        <label htmlFor="fillPrice" className="text-xs font-medium text-gray-500 md:hidden">Fill Price</label>
         <input
+          id="fillPrice"
           type="number"
           step="0.01"
           value={fillPrice}
@@ -153,50 +190,39 @@ const AddPositionRow = ({ user }) => {
           placeholder="Price"
         />
       </td>
-      {/* Date Input + Today Button */}
-      <td className="whitespace-nowrap px-6 py-4">
-        <div className="flex space-x-2">
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
-          <button
-            type="button"
-            onClick={handleSetToday}
-            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-          >
-            Today
-          </button>
-        </div>
-        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-      </td>
-      {/* Type Dropdown */}
-      <td className="whitespace-nowrap px-6 py-4">
-        <select
-          value={type}
-          onChange={(e) => setType(e.target.value)}
+      {/* Date Input */}
+      <td className="block whitespace-nowrap px-3 py-2 md:table-cell md:py-3">
+        <label htmlFor="date" className="text-xs font-medium text-gray-500 md:hidden">Date</label>
+        <input
+          id="date"
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
           className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-        >
-          <option>Long</option>
-          <option>Momentum</option>
-          <option>RSU</option>
-          <option>Commodity</option>
-        </select>
+        />
       </td>
-      {/* Spacers for calculated columns */}
-      <td className="px-6 py-4"></td>
-      <td className="px-6 py-4"></td>
-      <td className="px-6 py-4"></td>
-      <td className="px-6 py-4"></td>
-      {/* Submit Button */}
-      <td className="whitespace-nowrap px-6 py-4 text-center">
+      {/* Spacers */}
+      <td className="hidden px-3 py-3 md:table-cell"></td>
+      <td className="hidden px-3 py-3 md:table-cell"></td>
+      <td className="hidden px-3 py-3 md:table-cell"></td>
+      {/* Error & Submit */}
+      <td className="block whitespace-nowrap px-3 py-2 text-left md:table-cell md:py-3" colSpan="2">
+        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+        {/* Submit Button (Visible on Mobile) */}
         <button
           type="button"
           onClick={handleSubmit}
           disabled={!isFormValid || isSubmitting}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm hover:bg-blue-700 disabled:bg-gray-300"
+          className="mt-2 inline-flex w-full items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:bg-gray-300 md:hidden"
+        >
+          {isSubmitting ? 'Adding...' : 'Add Position'}
+        </button>
+        {/* Submit Button (Visible on Desktop) */}
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={!isFormValid || isSubmitting}
+          className="hidden h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm hover:bg-blue-700 disabled:bg-gray-300 md:inline-flex"
         >
           {isSubmitting ? (
             <span className="text-xs">...</span>
@@ -214,7 +240,8 @@ const AddPositionRow = ({ user }) => {
 const PositionsPage = ({ user }) => {
   // Raw data from Firestore
   const [positions, setPositions] = useState([]);
-  // Live prices from API: { "TQQQ": 58.50, "GOOG": 180.20, ... }
+  const [strategies, setStrategies] = useState({});
+  // Live prices from API
   const [priceData, setPriceData] = useState({});
   const [isLoadingDb, setIsLoadingDb] = useState(true);
   const [expandedTickers, setExpandedTickers] = useState([]);
@@ -258,7 +285,24 @@ const PositionsPage = ({ user }) => {
     return () => unsubscribe();
   }, [user]);
 
-  // Effect 2: Fetch prices when positions change, and poll every 5 mins
+  // Effect 2: Listen to Firestore for strategy changes
+  useEffect(() => {
+    if (!user) {
+      setStrategies({});
+      return;
+    }
+    const strategiesPath = collection(db, 'users', user.uid, 'strategies');
+    const unsubscribe = onSnapshot(strategiesPath, (snapshot) => {
+      const stratData = {};
+      snapshot.forEach((doc) => {
+        stratData[doc.id] = doc.data().strategy;
+      });
+      setStrategies(stratData);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  // Effect 3: Fetch prices when positions change, and poll every 5 mins
   useEffect(() => {
     if (!positions || positions.length === 0) {
       setPriceData({});
@@ -278,7 +322,9 @@ const PositionsPage = ({ user }) => {
         const url = `${API_URL}/${ticker}?api_token=${API_KEY}&fmt=json`;
         return fetch(url).then((res) => {
           if (!res.ok) {
-            throw new Error(`API request failed for ${ticker}: ${res.statusText}`);
+            throw new Error(
+              `API request failed for ${ticker}: ${res.statusText}`
+            );
           }
           return res.json();
         });
@@ -286,14 +332,13 @@ const PositionsPage = ({ user }) => {
 
       try {
         const results = await Promise.all(pricePromises);
-        
+
         const newPriceData = {};
         results.forEach((item) => {
           // Defensive Guard: Check if item and its properties exist
           if (item && item.code && typeof item.close !== 'undefined') {
             newPriceData[item.code.replace('.US', '')] = item.close;
           } else {
-            // Log a warning if we get an unexpected item shape
             console.warn('Received malformed price data item:', item);
           }
         });
@@ -304,25 +349,22 @@ const PositionsPage = ({ user }) => {
     };
 
     fetchPrices(); // Fetch immediately on load
-
-    // Set up polling to re-fetch prices every 5 minutes
-    const intervalId = setInterval(fetchPrices, 300000); // 300,000 ms = 5 mins
-
-    // Cleanup interval on component unmount
+    const intervalId = setInterval(fetchPrices, 300000); // 5 mins
     return () => clearInterval(intervalId);
   }, [positions]);
 
-  // Effect 3: Process and aggregate data when positions or prices change
+  // Effect 4: Process and aggregate data
   const aggregatedPositions = useMemo(() => {
     const groups = {};
 
     positions.forEach((pos) => {
       if (!groups[pos.ticker]) {
-        // Initialize the group if it doesn't exist
         groups[pos.ticker] = {
           lots: [],
           totalAmount: 0,
           totalCostBasis: 0,
+          strategy: strategies[pos.ticker] || '', // Default to empty
+          oldestEntryDate: pos.date,
         };
       }
 
@@ -330,6 +372,11 @@ const PositionsPage = ({ user }) => {
       group.lots.push(pos);
       group.totalAmount += pos.amount;
       group.totalCostBasis += pos.amount * pos.fillPrice;
+
+      // Find the oldest date
+      if (new Date(pos.date) < new Date(group.oldestEntryDate)) {
+        group.oldestEntryDate = pos.date;
+      }
     });
 
     // Calculate final metrics for each group
@@ -344,10 +391,13 @@ const PositionsPage = ({ user }) => {
         group.totalCostBasis === 0
           ? 0
           : group.gainLoss / group.totalCostBasis;
+
+      // Sort lots by date (newest first) for display
+      group.lots.sort((a, b) => new Date(b.date) - new Date(a.date));
     });
 
     return groups;
-  }, [positions, priceData]);
+  }, [positions, priceData, strategies]);
 
   /**
    * Toggles the expansion state for a given ticker.
@@ -358,6 +408,14 @@ const PositionsPage = ({ user }) => {
         ? prev.filter((t) => t !== ticker)
         : [...prev, ticker]
     );
+  };
+  
+  const expandAll = () => {
+    setExpandedTickers(Object.keys(aggregatedPositions));
+  };
+  
+  const collapseAll = () => {
+    setExpandedTickers([]);
   };
 
   /**
@@ -427,7 +485,7 @@ const PositionsPage = ({ user }) => {
     if (tickers.length === 0) {
       return (
         <tr>
-          <td colSpan="11" className="px-6 py-4 text-center text-gray-500">
+          <td colSpan="10" className="px-4 py-4 text-center text-gray-500">
             No positions added yet. Use the row below to add one.
           </td>
         </tr>
@@ -442,8 +500,8 @@ const PositionsPage = ({ user }) => {
       return (
         <React.Fragment key={ticker}>
           {/* Aggregated Row */}
-          <tr className="bg-white hover:bg-gray-50">
-            <td className="whitespace-nowrap px-6 py-4">
+          <tr className="block bg-white hover:bg-gray-50 md:table-row">
+            <td className="whitespace-nowrap px-4 py-3 md:table-cell">
               <button
                 onClick={() => toggleTickerExpansion(ticker)}
                 className="text-gray-500 hover:text-gray-700"
@@ -451,37 +509,38 @@ const PositionsPage = ({ user }) => {
                 {isExpanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
               </button>
             </td>
-            <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
+            <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900 md:table-cell">
               {ticker}
             </td>
-            <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
               {group.totalAmount}
             </td>
-            <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-              -
+            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
+              <StrategySelector
+                user={user}
+                ticker={ticker}
+                currentStrategy={group.strategy}
+              />
             </td>
-            <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-              -
+            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
+              {group.oldestEntryDate}
             </td>
-            <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-              -
-            </td>
-            <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
+            <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900 md:table-cell">
               {formatCurrency(group.currentValue)}
             </td>
-            <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
               {formatCurrency(group.totalCostBasis)}
             </td>
-            <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+            <td className="whitespace-nowLabe-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
               {formatCurrency(currentPrice)}
             </td>
-            <td className="whitespace-nowrap px-6 py-4 text-sm">
+            <td className="whitespace-nowrap px-4 py-3 text-sm md:table-cell">
               <RenderGainLoss
                 value={group.gainLoss}
                 formatter={formatCurrency}
               />
             </td>
-            <td className="whitespace-nowrap px-6 py-4 text-sm">
+            <td className="whitespace-nowrap px-4 py-3 text-sm md:table-cell">
               <RenderGainLoss
                 value={group.gainLossPercent}
                 formatter={formatPercentage}
@@ -499,45 +558,47 @@ const PositionsPage = ({ user }) => {
                 lotCostBasis === 0 ? 0 : lotGainLoss / lotCostBasis;
 
               return (
-                <tr key={lot.id} className="bg-gray-50">
-                  <td className="px-6 py-2"></td>
-                  <td className="whitespace-nowrap px-6 py-2 text-xs font-medium text-gray-700">
-                    Lot
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-2 text-xs text-gray-500">
-                    {lot.amount}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-2 text-xs text-gray-500">
-                    {formatCurrency(lot.fillPrice)}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-2 text-xs text-gray-500">
-                    {lot.date}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-2 text-xs text-gray-500">
-                    {lot.type}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-2 text-xs text-gray-500">
-                    {formatCurrency(lotCurrentValue)}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-2 text-xs text-gray-500">
-                    {formatCurrency(lotCostBasis)}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-2 text-xs text-gray-500">
-                    {formatCurrency(currentPrice)}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-2 text-xs">
-                    <RenderGainLoss
-                      value={lotGainLoss}
-                      formatter={formatCurrency}
-                    />
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-2 text-center text-xs">
+                <tr key={lot.id} className="block bg-gray-50 md:table-row">
+                  <td className="whitespace-nowrap px-4 py-2 text-center md:table-cell">
                     <button
                       onClick={() => handleDeleteClick(lot.id)}
                       className="text-red-500 hover:text-red-700"
                     >
                       <TrashIcon />
                     </button>
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-2 text-xs font-medium text-gray-700 md:table-cell">
+                    -
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
+                    {lot.amount}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
+                    {formatCurrency(lot.fillPrice)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
+                    {lot.date}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
+                    {formatCurrency(lotCurrentValue)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
+                    {formatCurrency(lotCostBasis)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
+                    {formatCurrency(currentPrice)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-2 text-xs md:table-cell">
+                    <RenderGainLoss
+                      value={lotGainLoss}
+                      formatter={formatCurrency}
+                    />
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-2 text-xs md:table-cell">
+                    <RenderGainLoss
+                      value={lotGainLossPercent}
+                      formatter={formatPercentage}
+                    />
                   </td>
                 </tr>
               );
@@ -549,40 +610,56 @@ const PositionsPage = ({ user }) => {
 
   return (
     <div>
-      <h1 className="mb-4 text-3xl font-bold text-gray-900">Current Positions</h1>
+      <div className="mb-4 flex flex-col items-stretch justify-between sm:flex-row sm:items-center">
+        <h1 className="text-3xl font-bold text-gray-900">Current Positions</h1>
+        {/* Expand/Collapse Buttons */}
+        <div className="mt-2 flex space-x-2 sm:mt-0">
+          <button
+            onClick={expandAll}
+            className="rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+          >
+            Expand All
+          </button>
+          <button
+            onClick={collapseAll}
+            className="rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+          >
+            Collapse All
+          </button>
+        </div>
+      </div>
+
+      {/* Main Table */}
       <div className="overflow-x-auto rounded-lg bg-white shadow">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
-            <tr>
-              <th className="w-12 px-6 py-3"></th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+            <tr className="hidden md:table-row">
+              <th className="w-12 px-4 py-3"></th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Ticker
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Amount
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Fill Price
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Strategy / Fill Price
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Date
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                First Entry / Entry Date
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Type
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Current Value
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Cost Basis
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Current Price
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Gain ($)
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Gain (%)
               </th>
             </tr>
