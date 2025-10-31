@@ -9,21 +9,23 @@ import {
   doc,
   deleteDoc,
   setDoc,
+  updateDoc, // Import updateDoc
 } from 'firebase/firestore';
 import {
   PlusIcon,
   ChevronRightIcon,
   ChevronDownIcon,
   TrashIcon,
+  BanknotesIcon, // Use the new icon
 } from '../components/Icons';
 import ConfirmModal from '../components/ConfirmModal';
+import ClosePositionModal from '../components/ClosePositionModal'; // Import new modal
 
 // Retrieve the API key from environment variables
 const API_KEY = import.meta.env.VITE_EODHD_API_KEY;
 const API_URL = 'https://eodhd.com/api/real-time';
 
 // --- Helper Functions ---
-
 const formatCurrency = (value) => {
   if (typeof value !== 'number') {
     value = 0;
@@ -246,9 +248,12 @@ const PositionsPage = ({ user }) => {
   const [isLoadingDb, setIsLoadingDb] = useState(true);
   const [expandedTickers, setExpandedTickers] = useState([]);
 
-  // State for the confirmation modal
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedLotId, setSelectedLotId] = useState(null);
+  // State for the delete confirmation modal
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedLot, setSelectedLot] = useState(null);
+  
+  // State for the close position modal
+  const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
 
   // Effect 1: Listen to Firestore for position changes
   useEffect(() => {
@@ -399,9 +404,8 @@ const PositionsPage = ({ user }) => {
     return groups;
   }, [positions, priceData, strategies]);
 
-  /**
-   * Toggles the expansion state for a given ticker.
-   */
+  // --- Modal Handlers ---
+
   const toggleTickerExpansion = (ticker) => {
     setExpandedTickers((prev) =>
       prev.includes(ticker)
@@ -418,27 +422,18 @@ const PositionsPage = ({ user }) => {
     setExpandedTickers([]);
   };
 
-  /**
-   * Opens the confirmation modal to delete a lot.
-   */
-  const handleDeleteClick = (lotId) => {
-    setSelectedLotId(lotId);
-    setIsModalOpen(true);
+  const handleDeleteClick = (lot) => {
+    setSelectedLot(lot);
+    setIsDeleteModalOpen(true);
   };
 
-  /**
-   * Closes the confirmation modal.
-   */
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedLotId(null);
+  const handleCloseDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setSelectedLot(null);
   };
 
-  /**
-   * Confirms and executes the deletion of the selected lot.
-   */
   const handleConfirmDelete = async () => {
-    if (!selectedLotId || !user) return;
+    if (!selectedLot || !user) return;
 
     try {
       const docPath = doc(
@@ -446,13 +441,65 @@ const PositionsPage = ({ user }) => {
         'users',
         user.uid,
         'positions',
-        selectedLotId
+        selectedLot.id
       );
       await deleteDoc(docPath);
     } catch (error) {
       console.error('Error deleting document: ', error);
     } finally {
-      handleCloseModal();
+      handleCloseDeleteModal();
+    }
+  };
+  
+  const handleClosePositionClick = (lot) => {
+    setSelectedLot(lot);
+    setIsCloseModalOpen(true);
+  };
+  
+  const handleCloseClosePositionModal = () => {
+    setIsCloseModalOpen(false);
+    setSelectedLot(null);
+  };
+  
+  /**
+   * Handles the logic for closing a full or partial position.
+   */
+  const handleConfirmClosePosition = async (closedLotData) => {
+    if (!closedLotData || !user) return;
+    
+    const { exitQuantity, exitPrice, exitDate, ...originalLot } = closedLotData;
+    
+    try {
+      // 1. Add to 'closed_positions' collection
+      const closedPositionsPath = collection(db, 'users', user.uid, 'closed_positions');
+      await addDoc(closedPositionsPath, {
+        ticker: originalLot.ticker,
+        amount: exitQuantity, // Use the new exitQuantity
+        fillPrice: originalLot.fillPrice,
+        date: originalLot.date,
+        exitPrice: exitPrice,
+        exitDate: exitDate,
+        closedAt: serverTimestamp(),
+      });
+      
+      // 2. Decide whether to update or delete the original lot
+      const originalLotRef = doc(db, 'users', user.uid, 'positions', originalLot.id);
+      
+      if (exitQuantity < originalLot.amount) {
+        // Partial close: Update the original lot's amount
+        const newAmount = originalLot.amount - exitQuantity;
+        await updateDoc(originalLotRef, {
+          amount: newAmount,
+        });
+      } else {
+        // Full close: Delete the original lot
+        await deleteDoc(originalLotRef);
+      }
+      
+    } catch (error) {
+      console.error('Error closing position: ', error);
+    } finally {
+      handleCloseClosePositionModal();
     }
   };
 
@@ -531,7 +578,7 @@ const PositionsPage = ({ user }) => {
             <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
               {formatCurrency(group.totalCostBasis)}
             </td>
-            <td className="whitespace-nowLabe-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
+            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
               {formatCurrency(currentPrice)}
             </td>
             <td className="whitespace-nowrap px-4 py-3 text-sm md:table-cell">
@@ -560,12 +607,22 @@ const PositionsPage = ({ user }) => {
               return (
                 <tr key={lot.id} className="block bg-gray-50 md:table-row">
                   <td className="whitespace-nowrap px-4 py-2 text-center md:table-cell">
-                    <button
-                      onClick={() => handleDeleteClick(lot.id)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <TrashIcon />
-                    </button>
+                    <div className="flex justify-center space-x-2">
+                      <button
+                        onClick={() => handleClosePositionClick(lot)}
+                        title="Sell/Close Position"
+                        className="text-green-600 hover:text-green-800"
+                      >
+                        <BanknotesIcon />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(lot)}
+                        title="Delete Lot"
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <TrashIcon />
+                      </button>
+                    </div>
                   </td>
                   <td className="whitespace-nowrap px-4 py-2 text-xs font-medium text-gray-700 md:table-cell">
                     -
@@ -673,11 +730,19 @@ const PositionsPage = ({ user }) => {
 
       {/* Confirmation Modal for Deleting */}
       <ConfirmModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
+        isOpen={isDeleteModalOpen}
+        onClose={handleCloseDeleteModal}
         onConfirm={handleConfirmDelete}
         title="Delete Position"
         message="Are you sure you want to delete this position lot? This action cannot be undone."
+      />
+      
+      {/* New Modal for Closing */}
+      <ClosePositionModal
+        isOpen={isCloseModalOpen}
+        onClose={handleCloseClosePositionModal}
+        onConfirm={handleConfirmClosePosition}
+        lot={selectedLot}
       />
     </div>
   );

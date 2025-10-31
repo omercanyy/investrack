@@ -4,217 +4,173 @@ import {
   PositionsIcon,
   MenuIcon,
   CloseIcon,
-  GoogleIcon,
 } from './Icons';
-import { auth, googleProvider } from '../firebase';
-import { signInWithPopup, signOut } from 'firebase/auth';
+
+/**
+ * Renders the main application layout, including Sidebar, TopBar, and MainContent.
+ */
+export const AppLayout = ({
+  children,
+  user,
+  handleLogout,
+  activePage,
+  setActivePage,
+}) => {
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+
+  return (
+    <div className="flex h-screen bg-gray-100">
+      {/* 1. Sidebar */}
+      <Sidebar
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+        activePage={activePage}
+        setActivePage={setActivePage}
+      />
+
+      {/* 2. Main Content Area */}
+      <div className="flex flex-1 flex-col">
+        {/* TopBar */}
+        <TopBar
+          user={user}
+          handleLogout={handleLogout}
+          setIsSidebarOpen={setIsSidebarOpen}
+        />
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-8">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Renders the responsive sidebar navigation.
+ */
+const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, activePage, setActivePage }) => {
+  
+  const handleLinkClick = (page) => {
+    setActivePage(page);
+    setIsSidebarOpen(false); // Close mobile sidebar on navigation
+  };
+  
+  return (
+    <>
+      {/* Mobile Sidebar Backdrop (visible when open) */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        ></div>
+      )}
+
+      {/* Sidebar Content */}
+      <div
+        className={`fixed inset-y-0 left-0 z-30 w-64 transform bg-gray-900 text-gray-200 shadow-lg transition-transform duration-300 ease-in-out lg:static lg:z-auto lg:translate-x-0
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      >
+        <div className="flex items-center justify-between p-4 lg:justify-center">
+          <h2 className="text-2xl font-bold text-white">InvestTrack</h2>
+          <button
+            className="text-gray-400 hover:text-white lg:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          >
+            <CloseIcon />
+          </button>
+        </div>
+        <nav className="mt-4">
+          <SidebarLink
+            icon={<DashboardIcon />}
+            name="Dashboard"
+            href="dashboard"
+            isActive={activePage === 'dashboard'}
+            onClick={() => handleLinkClick('dashboard')}
+          />
+          <SidebarLink
+            icon={<PositionsIcon />}
+            name="Current"
+            href="positions"
+            isActive={activePage === 'positions'}
+            onClick={() => handleLinkClick('positions')}
+          />
+          <SidebarLink
+            icon={<PositionsIcon />}
+            name="Closed"
+            href="closed"
+            isActive={activePage === 'closed'}
+            onClick={() => handleLinkClick('closed')}
+          />
+        </nav>
+      </div>
+    </>
+  );
+};
 
 /**
  * Renders a single navigation link in the sidebar.
  */
-function NavLink({ icon, text, onClick }) {
+const SidebarLink = ({ icon, name, href, isActive, onClick }) => {
+  const activeClass = isActive ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white';
+  
   return (
-    <button
-      onClick={onClick}
-      className="flex w-full items-center rounded-lg p-2 text-gray-400 hover:bg-gray-700 hover:text-white"
+    <a
+      href="#"
+      onClick={(e) => {
+        e.preventDefault();
+        onClick();
+      }}
+      className={`flex items-center space-x-3 px-4 py-3 ${activeClass}`}
     >
       {icon}
-      <span className="ml-3 flex-1 whitespace-nowrap text-left">{text}</span>
-    </button>
+      <span>{name}</span>
+    </a>
   );
-}
+};
 
 /**
- * Renders the main sidebar navigation.
+ * Renders the top bar, including the mobile menu button and user profile.
  */
-function Sidebar({ isSidebarOpen, closeSidebar, onNavClick, activePage }) {
-  const getLinkClasses = (page) => {
-    return activePage === page
-      ? 'bg-gray-700 text-white' // Active state
-      : 'text-gray-400 hover:bg-gray-700 hover:text-white'; // Inactive state
-  };
-
+const TopBar = ({ user, handleLogout, setIsSidebarOpen }) => {
   return (
-    <>
-      {/* Overlay for mobile (when sidebar is open) */}
-      <div
-        className={`fixed inset-0 z-20 bg-black/50 transition-opacity md:hidden ${
-          isSidebarOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
-        }`}
-        onClick={closeSidebar}
-      ></div>
-
-      {/* Sidebar */}
-      <aside
-        className={`fixed left-0 top-0 z-30 h-full w-64 bg-gray-800 transition-transform md:relative md:translate-x-0 ${
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-        aria-label="Sidebar"
+    <header className="flex h-16 w-full items-center justify-between bg-white px-4 shadow-md md:px-8">
+      {/* Mobile Menu Button */}
+      <button
+        className="text-gray-500 hover:text-gray-700 lg:hidden"
+        onClick={() => setIsSidebarOpen(true)}
       >
-        <div className="flex h-full flex-col overflow-y-auto px-3 py-4">
-          <div className="mb-5 flex items-center justify-between p-2">
-            <a href="#" className="flex items-center">
-              <span className="self-center text-xl font-semibold text-white">
-                InvestTrack
-              </span>
-            </a>
-            {/* Mobile close button */}
-            <button onClick={closeSidebar} className="text-gray-400 md:hidden">
-              <CloseIcon />
+        <MenuIcon />
+      </button>
+
+      {/* Spacer */}
+      <div className="flex-1"></div>
+
+      {/* User Profile / Login */}
+      <div className="flex items-center">
+        {user ? (
+          <div className="flex items-center space-x-3">
+            <img
+              src={user.photoURL || 'https://placehold.co/40x40/E2E8F0/718096?text=U'}
+              alt="User"
+              className="h-10 w-10 rounded-full"
+            />
+            <span className="hidden text-sm font-medium text-gray-700 sm:block">
+              {user.displayName}
+            </span>
+            <button
+              onClick={handleLogout}
+              className="rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+            >
+              Log Out
             </button>
           </div>
-          <ul className="space-y-2 font-medium">
-            <li>
-              <NavLink
-                icon={<DashboardIcon />}
-                text="Dashboard"
-                onClick={() => onNavClick('dashboard')}
-              />
-            </li>
-            <li>
-              <NavLink
-                icon={<PositionsIcon />}
-                text="Positions"
-                onClick={() => onNavClick('positions')}
-              />
-            </li>
-          </ul>
-        </div>
-      </aside>
-    </>
-  );
-}
-
-/**
- * Renders the Login/Logout buttons and user info.
- */
-function AuthControls({ user }) {
-  // Handle Google Login
-  const handleLogin = async () => {
-    try {
-      await signInWithPopup(auth, googleProvider);
-      // Auth listener (in App) will handle the user state update
-    } catch (error) {
-      console.error('Error during sign in:', error);
-    }
-  };
-
-  // Handle Logout
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      // Auth listener (in App) will handle the user state update
-    } catch (error) {
-      console.error('Error during sign out:', error);
-    }
-  };
-
-  // Conditional rendering
-  if (user) {
-    // User is logged in
-    return (
-      <div className="flex items-center space-x-3">
-        <img
-          src={user.photoURL}
-          alt={user.displayName}
-          className="h-8 w-8 rounded-full"
-        />
-        <span className="hidden text-sm font-medium text-white sm:block">
-          {user.displayName}
-        </span>
-        <button
-          onClick={handleLogout}
-          className="rounded-lg bg-gray-600 px-3 py-2 text-sm text-white hover:bg-gray-500"
-        >
-          Log Out
-        </button>
+        ) : (
+          <span className="text-sm font-medium text-gray-500">
+            Not logged in
+          </span>
+        )}
       </div>
-    );
-  }
-
-  // User is not logged in
-  return (
-    <button
-      onClick={handleLogin}
-      className="flex items-center justify-center rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-md hover:bg-gray-100"
-    >
-      <GoogleIcon />
-      Sign in with Google
-    </button>
+    </header>
   );
-}
-
-/**
- * Renders the top bar and the main content area.
- */
-function MainContent({ user, onMenuClick, activePage, children }) {
-  // Helper function to get the title for the top bar
-  const getPageTitle = () => {
-    if (activePage === 'dashboard') return 'Dashboard';
-    if (activePage === 'positions') return 'Positions';
-    return 'Overview';
-  };
-
-  return (
-    <div className="flex-1">
-      {/* Top Bar */}
-      <header className="sticky top-0 z-10 flex h-16 items-center justify-between bg-gray-800 px-4 shadow-md">
-        {/* Mobile menu button */}
-        <button
-          onClick={onMenuClick}
-          className="text-gray-400 hover:text-white md:hidden"
-        >
-          <MenuIcon />
-        </button>
-
-        {/* This is a spacer on mobile, or a title on desktop */}
-        <div className="hidden text-xl font-semibold text-white md:block">
-          {getPageTitle()}
-        </div>
-
-        {/* Auth controls */}
-        <div className="flex items-center">
-          <AuthControls user={user} />
-        </div>
-      </header>
-
-      {/* Main Content Area */}
-      <main className="overflow-y-auto bg-gray-100 p-4 md:p-8">
-        {/* Conditionally render the active page */}
-        {children}
-      </main>
-    </div>
-  );
-}
-
-/**
- * Main Layout Component
- * This groups all our layout pieces together.
- */
-export function Layout({
-  user,
-  activePage,
-  onNavClick,
-  isSidebarOpen,
-  setIsSidebarOpen,
-  children,
-}) {
-  return (
-    <div className="flex h-screen w-full bg-gray-800">
-      <Sidebar
-        isSidebarOpen={isSidebarOpen}
-        closeSidebar={() => setIsSidebarOpen(false)}
-        onNavClick={onNavClick}
-        activePage={activePage}
-      />
-      <MainContent
-        user={user}
-        onMenuClick={() => setIsSidebarOpen(true)}
-        activePage={activePage}
-      >
-        {children}
-      </MainContent>
-    </div>
-  );
-}
+};
 

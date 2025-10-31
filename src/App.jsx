@@ -1,66 +1,130 @@
 import React, { useState, useEffect } from 'react';
-// Import Firebase services
-import { auth } from './firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-
-// Import our new components
-import { Layout } from './components/Layout';
+import { auth, googleProvider, db } from './firebase';
+import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { AppLayout } from './components/Layout';
 import DashboardPage from './pages/DashboardPage';
 import PositionsPage from './pages/PositionsPage';
+import ClosedPositionsPage from './pages/ClosedPositionsPage'; // Import new page
 
-/**
- * Main App Component
- * This component now ONLY manages top-level state
- * (auth, page routing, sidebar) and renders the layout.
- */
 function App() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [user, setUser] = useState(null); // Auth state
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true); // Loading state
+  const [user, setUser] = useState(null);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [activePage, setActivePage] = useState('dashboard');
 
-  // Story [2.5]: Listen for auth changes
+  /**
+   * Effect to listen for auth changes and set up user document.
+   */
   useEffect(() => {
-    // This is the auth "listener". It fires once on load, and
-    // again any time the user logs in or out.
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setIsLoadingAuth(false); // Auth check is complete
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // User is signed in
+        const userRef = doc(db, 'users', user.uid);
+        const docSnap = await getDoc(userRef);
+        if (!docSnap.exists()) {
+          // Create new user document
+          await setDoc(userRef, {
+            displayName: user.displayName,
+            email: user.email,
+            photoURL: user.photoURL,
+            createdAt: serverTimestamp(),
+          });
+        }
+        setUser(user);
+      } else {
+        // User is signed out
+        setUser(null);
+      }
+      setIsLoadingAuth(false);
     });
-
-    // Cleanup function to remove the listener
+    // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, []); // Empty array means this effect runs only once on mount
+  }, []);
 
-  // If auth is still loading, show a blank page or a spinner
+  /**
+   * Handles Google Sign-In popup.
+   */
+  const handleLogin = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+      // The onAuthStateChanged listener will handle the user state update
+    } catch (error) {
+      console.error('Error during sign-in:', error);
+    }
+  };
+
+  /**
+   * Handles Sign-Out.
+   */
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      // The onAuthStateChanged listener will handle the user state update
+    } catch (error) {
+      console.error('Error during sign-out:', error);
+    }
+  };
+
+  /**
+   * Simple router to render the active page.
+   */
+  const renderPage = () => {
+    switch (activePage) {
+      case 'dashboard':
+        return <DashboardPage user={user} />;
+      case 'positions':
+        return <PositionsPage user={user} />;
+      case 'closed':
+        return <ClosedPositionsPage user={user} />; // Add new case
+      default:
+        return <DashboardPage user={user} />;
+    }
+  };
+  
+  // Show a global loading spinner while checking auth
   if (isLoadingAuth) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-gray-900">
-        <h1 className="text-3xl text-white">Loading...</h1>
+      <div className="flex h-screen w-full items-center justify-center bg-gray-100">
+        <h2 className="text-2xl font-semibold">Loading...</h2>
       </div>
     );
   }
 
-  // Handler for navigation clicks, passed down to Layout
-  const handleNavClick = (page) => {
-    setActivePage(page);
-    setIsSidebarOpen(false); // Close mobile menu on nav
-  };
-
   return (
-    <Layout
+    <AppLayout
       user={user}
+      handleLogout={handleLogout}
       activePage={activePage}
-      onNavClick={handleNavClick}
-      isSidebarOpen={isSidebarOpen}
-      setIsSidebarOpen={setIsSidebarOpen}
+      setActivePage={setActivePage}
     >
-      {/* Conditionally render the active page component */}
-      {activePage === 'dashboard' && <DashboardPage />}
-      {activePage === 'positions' && <PositionsPage user={user} />}
-    </Layout>
+      {user ? (
+        renderPage()
+      ) : (
+        <LoginPage handleLogin={handleLogin} />
+      )}
+    </AppLayout>
   );
 }
+
+/**
+ * A simple login page component for unauthenticated users.
+ */
+const LoginPage = ({ handleLogin }) => {
+  return (
+    <div className="flex h-full flex-col items-center justify-center rounded-lg bg-white p-6 text-center shadow">
+      <h1 className="text-3xl font-bold text-gray-900">Welcome to InvestTrack</h1>
+      <p className="mt-2 text-gray-600">
+        Please sign in to manage your portfolio.
+      </p>
+      <button
+        onClick={handleLogin}
+        className="mt-6 rounded-md bg-blue-600 px-4 py-2 text-lg font-medium text-white shadow-sm hover:bg-blue-700"
+      >
+        Sign in with Google
+      </button>
+    </div>
+  );
+};
 
 export default App;
 
