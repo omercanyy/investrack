@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { usePortfolio } from '../context/PortfolioContext';
+import AdminTools from '../components/AdminTools';
 
-// --- Helper Functions ---
 const formatCurrency = (value) => {
   if (typeof value !== 'number') {
     value = 0;
@@ -31,13 +31,9 @@ const RenderGainLoss = ({ value, formatter = (val) => val }) => {
 };
 
 
-/**
- * Renders the page for viewing closed positions.
- */
 const ClosedPositionsPage = () => {
   const { isLoading, closedPositions } = usePortfolio();
 
-  // Calculate gain/loss for each closed position
   const processedPositions = useMemo(() => {
     return closedPositions
       .map((pos) => {
@@ -53,13 +49,17 @@ const ClosedPositionsPage = () => {
           gainLossPercent,
         };
       })
-      .sort((a, b) => new Date(b.exitDate) - new Date(a.exitDate)); // Sort by most recent
+      .sort((a, b) => new Date(b.exitDate) - new Date(a.exitDate));
   }, [closedPositions]);
 
-  if (isLoading) {
+  if (isLoading && processedPositions.length === 0) {
     return (
-      <div className="rounded-lg bg-white p-6 text-center shadow">
-        <h2 className="text-xl font-semibold text-gray-700">Loading...</h2>
+      <div>
+        <h1 className="mb-4 text-3xl font-bold text-gray-900">Closed Positions</h1>
+        <AdminTools collectionName="closed_positions" title="Closed Positions" />
+        <div className="rounded-lg bg-white p-6 text-center shadow">
+          <h2 className="text-xl font-semibold text-gray-700">Loading...</h2>
+        </div>
       </div>
     );
   }
@@ -67,6 +67,9 @@ const ClosedPositionsPage = () => {
   return (
     <div>
       <h1 className="mb-4 text-3xl font-bold text-gray-900">Closed Positions</h1>
+      
+      <AdminTools collectionName="closed_positions" title="Closed Positions" />
+
       <div className="overflow-x-auto rounded-lg bg-white shadow">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -160,4 +163,3 @@ const ClosedPositionsPage = () => {
 };
 
 export default ClosedPositionsPage;
-

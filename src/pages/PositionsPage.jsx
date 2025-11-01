@@ -19,10 +19,10 @@ import {
 } from '../components/Icons';
 import ConfirmModal from '../components/ConfirmModal';
 import ClosePositionModal from '../components/ClosePositionModal';
-import { usePortfolio } from '../context/PortfolioContext'; // Import the hook
-import { useAuth } from '../context/AuthContext'; // Import useAuth to get user
+import { usePortfolio } from '../context/PortfolioContext';
+import { useAuth } from '../context/AuthContext';
+import AdminTools from '../components/AdminTools';
 
-// --- Helper Functions ---
 const formatCurrency = (value) => {
   if (typeof value !== 'number') {
     value = 0;
@@ -51,7 +51,6 @@ const RenderGainLoss = ({ value, formatter = (val) => val }) => {
   return <span className={colorClass}>{formatter(value)}</span>;
 };
 
-// --- StrategySelector Component ---
 const StrategySelector = ({ user, ticker, currentStrategy }) => {
   const [strategy, setStrategy] = useState(currentStrategy);
 
@@ -86,7 +85,6 @@ const StrategySelector = ({ user, ticker, currentStrategy }) => {
   );
 };
 
-// --- AddPositionRow Component ---
 const AddPositionRow = ({ user }) => {
   const [ticker, setTicker] = useState('');
   const [amount, setAmount] = useState('');
@@ -213,9 +211,7 @@ const AddPositionRow = ({ user }) => {
   );
 };
 
-// --- PositionsPage Component ---
 const PositionsPage = () => {
-  // Get all data from our new PortfolioContext
   const { user } = useAuth();
   const { isLoading, aggregatedPositions } = usePortfolio();
 
@@ -224,7 +220,6 @@ const PositionsPage = () => {
   const [selectedLot, setSelectedLot] = useState(null);
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
 
-  // --- Modal Handlers ---
   const toggleTickerExpansion = (ticker) => {
     setExpandedTickers((prev) =>
       prev.includes(ticker)
@@ -303,7 +298,6 @@ const PositionsPage = () => {
     }
   };
 
-  // --- Render Logic ---
   if (!user) {
     return (
       <div className="rounded-lg bg-white p-6 text-center shadow">
@@ -316,8 +310,12 @@ const PositionsPage = () => {
 
   if (isLoading && aggregatedPositions.length === 0) {
     return (
-      <div className="rounded-lg bg-white p-6 text-center shadow">
-        <h2 className="text-xl font-semibold text-gray-700">Loading...</h2>
+      <div>
+        <h1 className="mb-4 text-3xl font-bold text-gray-900">Current Positions</h1>
+        <AdminTools collectionName="positions" title="Positions" />
+        <div className="rounded-lg bg-white p-6 text-center shadow">
+          <h2 className="text-xl font-semibold text-gray-700">Loading...</h2>
+        </div>
       </div>
     );
   }
@@ -340,7 +338,6 @@ const PositionsPage = () => {
 
       return (
         <React.Fragment key={ticker}>
-          {/* Aggregated Row */}
           <tr className="block bg-white hover:bg-gray-50 md:table-row">
             <td className="whitespace-nowrap px-4 py-3 md:table-cell">
               <button
@@ -389,7 +386,6 @@ const PositionsPage = () => {
             </td>
           </tr>
 
-          {/* Expanded Lots (if expanded) */}
           {isExpanded &&
             group.lots.map((lot) => {
               const lotCostBasis = lot.amount * lot.fillPrice;
@@ -478,6 +474,8 @@ const PositionsPage = () => {
           </button>
         </div>
       </div>
+      
+      <AdminTools collectionName="positions" title="Positions" />
 
       <div className="overflow-x-auto rounded-lg bg-white shadow">
         <table className="min-w-full divide-y divide-gray-200">
@@ -505,7 +503,7 @@ const PositionsPage = () => {
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Current Price
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-module uppercase tracking-wider text-gray-500">
                 Gain ($)
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -539,4 +537,3 @@ const PositionsPage = () => {
 };
 
 export default PositionsPage;
-

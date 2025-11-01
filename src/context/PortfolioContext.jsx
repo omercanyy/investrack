@@ -20,7 +20,6 @@ export const usePortfolio = () => {
 export const PortfolioProvider = ({ children }) => {
   const { user } = useAuth();
 
-  // Raw data from Firestore
   const [positions, setPositions] = useState([]);
   const [closedPositions, setClosedPositions] = useState([]);
   const [strategies, setStrategies] = useState({});
@@ -28,7 +27,6 @@ export const PortfolioProvider = ({ children }) => {
   const [xirrValues, setXirrValues] = useState({ portfolio: 0, spy: 0, gld: 0 });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Effect 1: Listen to Firestore for position changes
   useEffect(() => {
     if (!user) {
       setPositions([]);
@@ -61,7 +59,6 @@ export const PortfolioProvider = ({ children }) => {
     return () => unsubscribe();
   }, [user]);
 
-  // Effect 2: Listen to Firestore for closed position changes
   useEffect(() => {
     if (!user) {
       setClosedPositions([]);
@@ -78,7 +75,6 @@ export const PortfolioProvider = ({ children }) => {
     return () => unsubscribe();
   }, [user]);
 
-  // Effect 3: Listen to Firestore for strategy changes
   useEffect(() => {
     if (!user) {
       setStrategies({});
@@ -95,19 +91,16 @@ export const PortfolioProvider = ({ children }) => {
     return () => unsubscribe();
   }, [user]);
 
-  // Effect 4: Fetch prices when positions change, and poll every 5 mins
   useEffect(() => {
     if (!positions || positions.length === 0) {
       setPriceData({});
       return;
     }
 
-    // Get a unique set of tickers
     const uniqueTickers = [
       ...new Set(positions.map((p) => `${p.ticker}.US`)),
     ];
     
-    // Always fetch SPY and GLD for XIRR benchmarks
     if (!uniqueTickers.includes('SPY.US')) uniqueTickers.push('SPY.US');
     if (!uniqueTickers.includes('GLD.US')) uniqueTickers.push('GLD.US');
 
@@ -120,12 +113,11 @@ export const PortfolioProvider = ({ children }) => {
       }
     };
 
-    fetchAllPrices(); // Fetch immediately on load
-    const intervalId = setInterval(fetchAllPrices, 300000); // 5 mins
+    fetchAllPrices();
+    const intervalId = setInterval(fetchAllPrices, 300000);
     return () => clearInterval(intervalId);
   }, [positions]);
 
-  // Effect 5: Process and aggregate data
   const aggregatedPositions = useMemo(() => {
     const groups = {};
     positions.forEach((pos) => {
@@ -160,13 +152,11 @@ export const PortfolioProvider = ({ children }) => {
       group.lots.sort((a, b) => new Date(b.date) - new Date(a.date));
     });
 
-    // Return as a sorted array
     return Object.values(groups).sort((a, b) =>
       a.ticker.localeCompare(b.ticker)
     );
   }, [positions, priceData, strategies]);
 
-  // Effect 6: Calculate total portfolio value
   const portfolioStats = useMemo(() => {
     let totalValue = 0;
     let totalCostBasis = 0;
@@ -180,7 +170,6 @@ export const PortfolioProvider = ({ children }) => {
     return { totalValue, totalCostBasis, totalGainLoss, totalGainLossPercent };
   }, [aggregatedPositions]);
 
-  // Effect 7: Calculate XIRR
   useEffect(() => {
     if (
       !user ||
@@ -188,13 +177,10 @@ export const PortfolioProvider = ({ children }) => {
       !priceData.SPY ||
       !priceData.GLD
     ) {
-      return; // Not ready to calculate
+      return;
     }
 
     const runXirr = async () => {
-      // DEBUGGING: Log raw inputs
-      // console.log('--- XIRR INPUT: positions ---', JSON.parse(JSON.stringify(positions)));
-      // console.log('--- XIRR INPUT: closedPositions ---', JSON.parse(JSON.stringify(closedPositions)));
 
       const rates = await calculateAllXIRR(
         positions,
@@ -216,8 +202,6 @@ export const PortfolioProvider = ({ children }) => {
     priceData.GLD,
   ]);
 
-  // This 'value' object is the source of the bug.
-  // The 'xirrData' property was missing.
   const value = {
     positions,
     closedPositions,
@@ -225,7 +209,7 @@ export const PortfolioProvider = ({ children }) => {
     priceData,
     aggregatedPositions,
     portfolioStats,
-    xirrValues, // It is now included here.
+    xirrValues,
     isLoading,
   };
 

@@ -1,24 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { CloseIcon } from './Icons';
 
-/**
- * A responsive modal for closing a position.
- */
 const ClosePositionModal = ({ isOpen, onClose, onConfirm, lot }) => {
   const [exitQuantity, setExitQuantity] = useState('');
   const [exitPrice, setExitPrice] = useState('');
   const [exitDate, setExitDate] = useState('');
   const [error, setError] = useState('');
 
-  // When the modal opens, pre-fill the quantity from the lot
   useEffect(() => {
     if (lot) {
       setExitQuantity(lot.amount);
-      // Set default date to today
       const today = new Date().toISOString().split('T')[0];
       setExitDate(today);
     } else {
-      // Reset form when modal is closed
       setExitQuantity('');
       setExitPrice('');
       setExitDate('');
@@ -32,7 +26,6 @@ const ClosePositionModal = ({ isOpen, onClose, onConfirm, lot }) => {
     const qty = parseFloat(exitQuantity);
     const price = parseFloat(exitPrice);
 
-    // Validation
     if (!qty || !price || !exitDate) {
       setError('Please fill out all fields.');
       return;
@@ -46,7 +39,6 @@ const ClosePositionModal = ({ isOpen, onClose, onConfirm, lot }) => {
       return;
     }
 
-    // Pass the confirmed data up
     onConfirm({
       ...lot,
       exitQuantity: qty,
@@ -56,17 +48,14 @@ const ClosePositionModal = ({ isOpen, onClose, onConfirm, lot }) => {
   };
 
   return (
-    // Backdrop
     <div
       className="fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-50"
       onClick={onClose}
     >
-      {/* Modal Container */}
       <div
         className="relative w-full max-w-lg rounded-lg bg-white p-6 shadow-xl"
-        onClick={(e) => e.stopPropagation()} // Prevent backdrop click
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-semibold text-gray-900">
             Close Position: {lot.ticker}
@@ -79,14 +68,12 @@ const ClosePositionModal = ({ isOpen, onClose, onConfirm, lot }) => {
           </button>
         </div>
 
-        {/* Form */}
         <div className="mt-4 space-y-4">
           <p className="text-sm text-gray-600">
             You are selling from the lot purchased on {lot.date} for $
             {lot.fillPrice}.
           </p>
 
-          {/* Quantity Input */}
           <div>
             <label
               htmlFor="exitQuantity"
@@ -103,7 +90,6 @@ const ClosePositionModal = ({ isOpen, onClose, onConfirm, lot }) => {
             />
           </div>
 
-          {/* Exit Price Input */}
           <div>
             <label
               htmlFor="exitPrice"
@@ -121,7 +107,6 @@ const ClosePositionModal = ({ isOpen, onClose, onConfirm, lot }) => {
             />
           </div>
 
-          {/* Exit Date Input */}
           <div>
             <label
               htmlFor="exitDate"
@@ -141,7 +126,6 @@ const ClosePositionModal = ({ isOpen, onClose, onConfirm, lot }) => {
           {error && <p className="text-sm text-red-600">{error}</p>}
         </div>
 
-        {/* Footer Buttons */}
         <div className="mt-6 flex justify-end space-x-3">
           <button
             type="button"

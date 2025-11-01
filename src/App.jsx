@@ -9,9 +9,6 @@ function App() {
   const { user, isLoading, handleLogin, handleLogout } = useAuth();
   const [activePage, setActivePage] = useState('dashboard');
 
-  /**
-   * Simple router to render the active page.
-   */
   const renderPage = () => {
     switch (activePage) {
       case 'dashboard':
@@ -25,7 +22,6 @@ function App() {
     }
   };
 
-  // Show a global loading spinner while checking auth
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-gray-100">
@@ -46,9 +42,6 @@ function App() {
   );
 }
 
-/**
- * A simple login page component for unauthenticated users.
- */
 const LoginPage = ({ handleLogin }) => {
   return (
     <div className="flex h-full flex-col items-center justify-center rounded-lg bg-white p-6 text-center shadow">

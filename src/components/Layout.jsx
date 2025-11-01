@@ -6,9 +6,6 @@ import {
   CloseIcon,
 } from './Icons';
 
-/**
- * Renders the main application layout, including Sidebar, TopBar, and MainContent.
- */
 export const AppLayout = ({
   children,
   user,
@@ -20,7 +17,6 @@ export const AppLayout = ({
 
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* 1. Sidebar */}
       <Sidebar
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
@@ -28,15 +24,12 @@ export const AppLayout = ({
         setActivePage={setActivePage}
       />
 
-      {/* 2. Main Content Area */}
       <div className="flex flex-1 flex-col">
-        {/* TopBar */}
         <TopBar
           user={user}
           handleLogout={handleLogout}
           setIsSidebarOpen={setIsSidebarOpen}
         />
-        {/* Page Content */}
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
           {children}
         </main>
@@ -45,19 +38,15 @@ export const AppLayout = ({
   );
 };
 
-/**
- * Renders the responsive sidebar navigation.
- */
 const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, activePage, setActivePage }) => {
   
   const handleLinkClick = (page) => {
     setActivePage(page);
-    setIsSidebarOpen(false); // Close mobile sidebar on navigation
+    setIsSidebarOpen(false);
   };
   
   return (
     <>
-      {/* Mobile Sidebar Backdrop (visible when open) */}
       {isSidebarOpen && (
         <div
           className="fixed inset-0 z-20 bg-black bg-opacity-50 lg:hidden"
@@ -65,7 +54,6 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, activePage, setActivePage })
         ></div>
       )}
 
-      {/* Sidebar Content */}
       <div
         className={`fixed inset-y-0 left-0 z-30 w-64 transform bg-gray-900 text-gray-200 shadow-lg transition-transform duration-300 ease-in-out lg:static lg:z-auto lg:translate-x-0
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
@@ -107,9 +95,6 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, activePage, setActivePage })
   );
 };
 
-/**
- * Renders a single navigation link in the sidebar.
- */
 const SidebarLink = ({ icon, name, href, isActive, onClick }) => {
   const activeClass = isActive ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white';
   
@@ -128,13 +113,9 @@ const SidebarLink = ({ icon, name, href, isActive, onClick }) => {
   );
 };
 
-/**
- * Renders the top bar, including the mobile menu button and user profile.
- */
 const TopBar = ({ user, handleLogout, setIsSidebarOpen }) => {
   return (
     <header className="flex h-16 w-full items-center justify-between bg-white px-4 shadow-md md:px-8">
-      {/* Mobile Menu Button */}
       <button
         className="text-gray-500 hover:text-gray-700 lg:hidden"
         onClick={() => setIsSidebarOpen(true)}
@@ -142,10 +123,8 @@ const TopBar = ({ user, handleLogout, setIsSidebarOpen }) => {
         <MenuIcon />
       </button>
 
-      {/* Spacer */}
       <div className="flex-1"></div>
 
-      {/* User Profile / Login */}
       <div className="flex items-center">
         {user ? (
           <div className="flex items-center space-x-3">

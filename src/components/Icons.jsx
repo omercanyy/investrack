@@ -1,7 +1,5 @@
 import React from 'react';
 
-// --- Reusable SVG Icon Components ---
-
 export const DashboardIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -130,7 +128,6 @@ export const TrashIcon = () => (
   </svg>
 );
 
-// --- The icon for "Sell/Close" ---
 export const BanknotesIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"

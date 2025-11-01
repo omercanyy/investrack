@@ -1,8 +1,5 @@
 import React from 'react';
 
-/**
- * A reusable confirmation modal dialog.
- */
 function ConfirmModal({
   isOpen,
   onClose,
@@ -15,9 +12,7 @@ function ConfirmModal({
   }
 
   return (
-    // Backdrop
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      {/* Modal Panel */}
       <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
         <h3 className="text-lg font-medium leading-6 text-gray-900">
           {title}

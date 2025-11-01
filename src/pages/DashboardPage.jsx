@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { usePortfolio } from '../context/PortfolioContext'; // Import the hook
+import { usePortfolio } from '../context/PortfolioContext';
 import {
   PieChart,
   Pie,
@@ -9,7 +9,6 @@ import {
   Legend,
 } from 'recharts';
 
-// --- Helper Functions ---
 const formatCurrency = (value) => {
   if (typeof value !== 'number') {
     value = 0;
@@ -38,10 +37,6 @@ const RenderGainLoss = ({ value, formatter = (val) => val }) => {
   return <span className={colorClass}>{formatter(value)}</span>;
 };
 
-/**
- * A simple card component for displaying a single statistic.
- * Updated to handle XIRR values.
- */
 const StatCard = ({ title, value, gainLoss, gainLossPercent, isXIRR = false }) => {
   return (
     <div className="rounded-lg bg-white p-6 shadow">
@@ -67,7 +62,6 @@ const StatCard = ({ title, value, gainLoss, gainLossPercent, isXIRR = false }) =
   );
 };
 
-// --- Pie Chart Component ---
 const COLORS = [
   '#0088FE',
   '#00C49F',
@@ -141,11 +135,7 @@ const PortfolioPieChart = ({ data, totalValue }) => {
   );
 };
 
-/**
- * Renders the main dashboard page with summary statistics.
- */
 const DashboardPage = () => {
-  // Get all data from our new PortfolioContext
   const {
     isLoading,
     aggregatedPositions,
@@ -153,12 +143,11 @@ const DashboardPage = () => {
     xirrValues,
   } = usePortfolio();
 
-  // Transform data for the pie chart, grouping small slices
   const pieChartData = useMemo(() => {
     const { totalValue } = portfolioStats;
     if (totalValue === 0) return [];
 
-    const threshold = 0.02; // Slices smaller than 2% will be grouped
+    const threshold = 0.02;
     let otherValue = 0;
     const mainData = [];
 
@@ -174,7 +163,6 @@ const DashboardPage = () => {
       }
     });
 
-    // Add the "Other" slice if it has value
     if (otherValue > 0) {
       mainData.push({
         name: 'Other',
@@ -182,7 +170,6 @@ const DashboardPage = () => {
       });
     }
 
-    // Sort by value, largest first
     mainData.sort((a, b) => b.value - a.value);
 
     return mainData;
@@ -200,7 +187,6 @@ const DashboardPage = () => {
     <div>
       <h1 className="mb-4 text-3xl font-bold text-gray-900">Dashboard</h1>
 
-      {/* Grid for Stat Cards */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         <StatCard
           title="Total Portfolio Value"
@@ -225,7 +211,6 @@ const DashboardPage = () => {
         />
       </div>
 
-      {/* Chart */}
       <div className="mt-8 rounded-lg bg-white p-6 shadow">
         <h2 className="text-xl font-semibold text-gray-900">Composition</h2>
         <PortfolioPieChart
