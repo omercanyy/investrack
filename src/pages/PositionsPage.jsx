@@ -1,29 +1,26 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import {
   collection,
   query,
-  onSnapshot,
   addDoc,
   serverTimestamp,
   doc,
   deleteDoc,
   setDoc,
-  updateDoc, // Import updateDoc
+  updateDoc,
 } from 'firebase/firestore';
 import {
   PlusIcon,
   ChevronRightIcon,
   ChevronDownIcon,
   TrashIcon,
-  BanknotesIcon, // Use the new icon
+  BanknotesIcon,
 } from '../components/Icons';
 import ConfirmModal from '../components/ConfirmModal';
-import ClosePositionModal from '../components/ClosePositionModal'; // Import new modal
-
-// Retrieve the API key from environment variables
-const API_KEY = import.meta.env.VITE_EODHD_API_KEY;
-const API_URL = 'https://eodhd.com/api/real-time';
+import ClosePositionModal from '../components/ClosePositionModal';
+import { usePortfolio } from '../context/PortfolioContext'; // Import the hook
+import { useAuth } from '../context/AuthContext'; // Import useAuth to get user
 
 // --- Helper Functions ---
 const formatCurrency = (value) => {
@@ -58,7 +55,6 @@ const RenderGainLoss = ({ value, formatter = (val) => val }) => {
 const StrategySelector = ({ user, ticker, currentStrategy }) => {
   const [strategy, setStrategy] = useState(currentStrategy);
 
-  // Update local state if the prop changes
   useEffect(() => {
     setStrategy(currentStrategy);
   }, [currentStrategy]);
@@ -66,13 +62,9 @@ const StrategySelector = ({ user, ticker, currentStrategy }) => {
   const handleChange = async (e) => {
     const newStrategy = e.target.value;
     setStrategy(newStrategy);
-
     if (!user || !ticker) return;
-
-    // Save/Update the strategy in the new collection
     const docPath = doc(db, 'users', user.uid, 'strategies', ticker);
     try {
-      // Use 'Long' as default if nothing is selected
       await setDoc(docPath, { strategy: newStrategy || 'Long' });
     } catch (err) {
       console.error('Failed to save strategy: ', err);
@@ -124,10 +116,8 @@ const AddPositionRow = ({ user }) => {
       setError('You must be logged in.');
       return;
     }
-
     setIsSubmitting(true);
     setError(null);
-
     try {
       const positionsCollectionPath = collection(
         db,
@@ -150,12 +140,9 @@ const AddPositionRow = ({ user }) => {
     }
   };
 
-  // This single row will be styled to stack on mobile
   return (
     <tr className="block bg-gray-50 align-top md:table-row">
-      {/* Spacer */}
       <td className="hidden px-3 py-3 md:table-cell"></td>
-      {/* Ticker Input */}
       <td className="block whitespace-nowrap px-3 py-2 md:table-cell md:py-3">
         <label htmlFor="ticker" className="text-xs font-medium text-gray-500 md:hidden">Ticker</label>
         <input
@@ -167,7 +154,6 @@ const AddPositionRow = ({ user }) => {
           placeholder="Ticker"
         />
       </td>
-      {/* Amount Input */}
       <td className="block whitespace-nowrap px-3 py-2 md:table-cell md:py-3">
         <label htmlFor="amount" className="text-xs font-medium text-gray-500 md:hidden">Amount</label>
         <input
@@ -179,7 +165,6 @@ const AddPositionRow = ({ user }) => {
           placeholder="Amount"
         />
       </td>
-      {/* Fill Price Input */}
       <td className="block whitespace-nowrap px-3 py-2 md:table-cell md:py-3">
         <label htmlFor="fillPrice" className="text-xs font-medium text-gray-500 md:hidden">Fill Price</label>
         <input
@@ -192,7 +177,6 @@ const AddPositionRow = ({ user }) => {
           placeholder="Price"
         />
       </td>
-      {/* Date Input */}
       <td className="block whitespace-nowrap px-3 py-2 md:table-cell md:py-3">
         <label htmlFor="date" className="text-xs font-medium text-gray-500 md:hidden">Date</label>
         <input
@@ -203,14 +187,11 @@ const AddPositionRow = ({ user }) => {
           className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
         />
       </td>
-      {/* Spacers */}
       <td className="hidden px-3 py-3 md:table-cell"></td>
       <td className="hidden px-3 py-3 md:table-cell"></td>
       <td className="hidden px-3 py-3 md:table-cell"></td>
-      {/* Error & Submit */}
       <td className="block whitespace-nowrap px-3 py-2 text-left md:table-cell md:py-3" colSpan="2">
         {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-        {/* Submit Button (Visible on Mobile) */}
         <button
           type="button"
           onClick={handleSubmit}
@@ -219,18 +200,13 @@ const AddPositionRow = ({ user }) => {
         >
           {isSubmitting ? 'Adding...' : 'Add Position'}
         </button>
-        {/* Submit Button (Visible on Desktop) */}
         <button
           type="button"
           onClick={handleSubmit}
           disabled={!isFormValid || isSubmitting}
           className="hidden h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm hover:bg-blue-700 disabled:bg-gray-300 md:inline-flex"
         >
-          {isSubmitting ? (
-            <span className="text-xs">...</span>
-          ) : (
-            <PlusIcon />
-          )}
+          {isSubmitting ? <span className="text-xs">...</span> : <PlusIcon />}
         </button>
       </td>
     </tr>
@@ -238,174 +214,17 @@ const AddPositionRow = ({ user }) => {
 };
 
 // --- PositionsPage Component ---
+const PositionsPage = () => {
+  // Get all data from our new PortfolioContext
+  const { user } = useAuth();
+  const { isLoading, aggregatedPositions } = usePortfolio();
 
-const PositionsPage = ({ user }) => {
-  // Raw data from Firestore
-  const [positions, setPositions] = useState([]);
-  const [strategies, setStrategies] = useState({});
-  // Live prices from API
-  const [priceData, setPriceData] = useState({});
-  const [isLoadingDb, setIsLoadingDb] = useState(true);
   const [expandedTickers, setExpandedTickers] = useState([]);
-
-  // State for the delete confirmation modal
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedLot, setSelectedLot] = useState(null);
-  
-  // State for the close position modal
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
 
-  // Effect 1: Listen to Firestore for position changes
-  useEffect(() => {
-    if (!user) {
-      setPositions([]);
-      setIsLoadingDb(false);
-      return;
-    }
-
-    setIsLoadingDb(true);
-    const positionsCollectionPath = collection(
-      db,
-      'users',
-      user.uid,
-      'positions'
-    );
-    const q = query(positionsCollectionPath);
-
-    const unsubscribe = onSnapshot(
-      q,
-      (querySnapshot) => {
-        const positionsData = [];
-        querySnapshot.forEach((doc) => {
-          positionsData.push({ id: doc.id, ...doc.data() });
-        });
-        setPositions(positionsData);
-        setIsLoadingDb(false);
-      },
-      (error) => {
-        console.error('Error fetching positions:', error);
-        setIsLoadingDb(false);
-      }
-    );
-    return () => unsubscribe();
-  }, [user]);
-
-  // Effect 2: Listen to Firestore for strategy changes
-  useEffect(() => {
-    if (!user) {
-      setStrategies({});
-      return;
-    }
-    const strategiesPath = collection(db, 'users', user.uid, 'strategies');
-    const unsubscribe = onSnapshot(strategiesPath, (snapshot) => {
-      const stratData = {};
-      snapshot.forEach((doc) => {
-        stratData[doc.id] = doc.data().strategy;
-      });
-      setStrategies(stratData);
-    });
-    return () => unsubscribe();
-  }, [user]);
-
-  // Effect 3: Fetch prices when positions change, and poll every 5 mins
-  useEffect(() => {
-    if (!positions || positions.length === 0) {
-      setPriceData({});
-      return;
-    }
-
-    // Get a unique set of tickers
-    const uniqueTickers = [
-      ...new Set(positions.map((p) => `${p.ticker}.US`)),
-    ];
-
-    const fetchPrices = async () => {
-      if (uniqueTickers.length === 0) return;
-
-      // This endpoint requires one call per ticker. We run them in parallel.
-      const pricePromises = uniqueTickers.map((ticker) => {
-        const url = `${API_URL}/${ticker}?api_token=${API_KEY}&fmt=json`;
-        return fetch(url).then((res) => {
-          if (!res.ok) {
-            throw new Error(
-              `API request failed for ${ticker}: ${res.statusText}`
-            );
-          }
-          return res.json();
-        });
-      });
-
-      try {
-        const results = await Promise.all(pricePromises);
-
-        const newPriceData = {};
-        results.forEach((item) => {
-          // Defensive Guard: Check if item and its properties exist
-          if (item && item.code && typeof item.close !== 'undefined') {
-            newPriceData[item.code.replace('.US', '')] = item.close;
-          } else {
-            console.warn('Received malformed price data item:', item);
-          }
-        });
-        setPriceData(newPriceData);
-      } catch (error) {
-        console.error('Error fetching prices in parallel:', error);
-      }
-    };
-
-    fetchPrices(); // Fetch immediately on load
-    const intervalId = setInterval(fetchPrices, 300000); // 5 mins
-    return () => clearInterval(intervalId);
-  }, [positions]);
-
-  // Effect 4: Process and aggregate data
-  const aggregatedPositions = useMemo(() => {
-    const groups = {};
-
-    positions.forEach((pos) => {
-      if (!groups[pos.ticker]) {
-        groups[pos.ticker] = {
-          lots: [],
-          totalAmount: 0,
-          totalCostBasis: 0,
-          strategy: strategies[pos.ticker] || '', // Default to empty
-          oldestEntryDate: pos.date,
-        };
-      }
-
-      const group = groups[pos.ticker];
-      group.lots.push(pos);
-      group.totalAmount += pos.amount;
-      group.totalCostBasis += pos.amount * pos.fillPrice;
-
-      // Find the oldest date
-      if (new Date(pos.date) < new Date(group.oldestEntryDate)) {
-        group.oldestEntryDate = pos.date;
-      }
-    });
-
-    // Calculate final metrics for each group
-    Object.keys(groups).forEach((ticker) => {
-      const group = groups[ticker];
-      const currentPrice = priceData[ticker] || 0;
-
-      group.weightedAvgPrice = group.totalCostBasis / group.totalAmount;
-      group.currentValue = group.totalAmount * currentPrice;
-      group.gainLoss = group.currentValue - group.totalCostBasis;
-      group.gainLossPercent =
-        group.totalCostBasis === 0
-          ? 0
-          : group.gainLoss / group.totalCostBasis;
-
-      // Sort lots by date (newest first) for display
-      group.lots.sort((a, b) => new Date(b.date) - new Date(a.date));
-    });
-
-    return groups;
-  }, [positions, priceData, strategies]);
-
   // --- Modal Handlers ---
-
   const toggleTickerExpansion = (ticker) => {
     setExpandedTickers((prev) =>
       prev.includes(ticker)
@@ -413,11 +232,11 @@ const PositionsPage = ({ user }) => {
         : [...prev, ticker]
     );
   };
-  
+
   const expandAll = () => {
-    setExpandedTickers(Object.keys(aggregatedPositions));
+    setExpandedTickers(aggregatedPositions.map((p) => p.ticker));
   };
-  
+
   const collapseAll = () => {
     setExpandedTickers([]);
   };
@@ -434,15 +253,8 @@ const PositionsPage = ({ user }) => {
 
   const handleConfirmDelete = async () => {
     if (!selectedLot || !user) return;
-
     try {
-      const docPath = doc(
-        db,
-        'users',
-        user.uid,
-        'positions',
-        selectedLot.id
-      );
+      const docPath = doc(db, 'users', user.uid, 'positions', selectedLot.id);
       await deleteDoc(docPath);
     } catch (error) {
       console.error('Error deleting document: ', error);
@@ -450,52 +262,40 @@ const PositionsPage = ({ user }) => {
       handleCloseDeleteModal();
     }
   };
-  
+
   const handleClosePositionClick = (lot) => {
     setSelectedLot(lot);
     setIsCloseModalOpen(true);
   };
-  
+
   const handleCloseClosePositionModal = () => {
     setIsCloseModalOpen(false);
     setSelectedLot(null);
   };
-  
-  /**
-   * Handles the logic for closing a full or partial position.
-   */
+
   const handleConfirmClosePosition = async (closedLotData) => {
     if (!closedLotData || !user) return;
-    
     const { exitQuantity, exitPrice, exitDate, ...originalLot } = closedLotData;
-    
     try {
-      // 1. Add to 'closed_positions' collection
       const closedPositionsPath = collection(db, 'users', user.uid, 'closed_positions');
       await addDoc(closedPositionsPath, {
         ticker: originalLot.ticker,
-        amount: exitQuantity, // Use the new exitQuantity
+        amount: exitQuantity,
         fillPrice: originalLot.fillPrice,
         date: originalLot.date,
         exitPrice: exitPrice,
         exitDate: exitDate,
         closedAt: serverTimestamp(),
       });
-      
-      // 2. Decide whether to update or delete the original lot
       const originalLotRef = doc(db, 'users', user.uid, 'positions', originalLot.id);
-      
       if (exitQuantity < originalLot.amount) {
-        // Partial close: Update the original lot's amount
         const newAmount = originalLot.amount - exitQuantity;
         await updateDoc(originalLotRef, {
           amount: newAmount,
         });
       } else {
-        // Full close: Delete the original lot
         await deleteDoc(originalLotRef);
       }
-      
     } catch (error) {
       console.error('Error closing position: ', error);
     } finally {
@@ -504,7 +304,6 @@ const PositionsPage = ({ user }) => {
   };
 
   // --- Render Logic ---
-
   if (!user) {
     return (
       <div className="rounded-lg bg-white p-6 text-center shadow">
@@ -515,7 +314,7 @@ const PositionsPage = ({ user }) => {
     );
   }
 
-  if (isLoadingDb && positions.length === 0) {
+  if (isLoading && aggregatedPositions.length === 0) {
     return (
       <div className="rounded-lg bg-white p-6 text-center shadow">
         <h2 className="text-xl font-semibold text-gray-700">Loading...</h2>
@@ -523,13 +322,8 @@ const PositionsPage = ({ user }) => {
     );
   }
 
-  /**
-   * Renders the main table body with aggregated rows and expandable lots.
-   */
   const renderTableBody = () => {
-    const tickers = Object.keys(aggregatedPositions);
-
-    if (tickers.length === 0) {
+    if (aggregatedPositions.length === 0) {
       return (
         <tr>
           <td colSpan="10" className="px-4 py-4 text-center text-gray-500">
@@ -539,10 +333,10 @@ const PositionsPage = ({ user }) => {
       );
     }
 
-    return tickers.map((ticker) => {
-      const group = aggregatedPositions[ticker];
+    return aggregatedPositions.map((group) => {
+      const ticker = group.ticker;
       const isExpanded = expandedTickers.includes(ticker);
-      const currentPrice = priceData[ticker] || 0;
+      const currentPrice = group.currentValue / group.totalAmount || 0;
 
       return (
         <React.Fragment key={ticker}>
@@ -669,7 +463,6 @@ const PositionsPage = ({ user }) => {
     <div>
       <div className="mb-4 flex flex-col items-stretch justify-between sm:flex-row sm:items-center">
         <h1 className="text-3xl font-bold text-gray-900">Current Positions</h1>
-        {/* Expand/Collapse Buttons */}
         <div className="mt-2 flex space-x-2 sm:mt-0">
           <button
             onClick={expandAll}
@@ -686,7 +479,6 @@ const PositionsPage = ({ user }) => {
         </div>
       </div>
 
-      {/* Main Table */}
       <div className="overflow-x-auto rounded-lg bg-white shadow">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -728,7 +520,6 @@ const PositionsPage = ({ user }) => {
         </table>
       </div>
 
-      {/* Confirmation Modal for Deleting */}
       <ConfirmModal
         isOpen={isDeleteModalOpen}
         onClose={handleCloseDeleteModal}
@@ -737,7 +528,6 @@ const PositionsPage = ({ user }) => {
         message="Are you sure you want to delete this position lot? This action cannot be undone."
       />
       
-      {/* New Modal for Closing */}
       <ClosePositionModal
         isOpen={isCloseModalOpen}
         onClose={handleCloseClosePositionModal}

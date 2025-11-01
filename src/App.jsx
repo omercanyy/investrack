@@ -1,69 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { auth, googleProvider, db } from './firebase';
-import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import React, { useState } from 'react';
+import { useAuth } from './context/AuthContext';
 import { AppLayout } from './components/Layout';
 import DashboardPage from './pages/DashboardPage';
 import PositionsPage from './pages/PositionsPage';
-import ClosedPositionsPage from './pages/ClosedPositionsPage'; // Import new page
+import ClosedPositionsPage from './pages/ClosedPositionsPage';
 
 function App() {
-  const [user, setUser] = useState(null);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const { user, isLoading, handleLogin, handleLogout } = useAuth();
   const [activePage, setActivePage] = useState('dashboard');
-
-  /**
-   * Effect to listen for auth changes and set up user document.
-   */
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        // User is signed in
-        const userRef = doc(db, 'users', user.uid);
-        const docSnap = await getDoc(userRef);
-        if (!docSnap.exists()) {
-          // Create new user document
-          await setDoc(userRef, {
-            displayName: user.displayName,
-            email: user.email,
-            photoURL: user.photoURL,
-            createdAt: serverTimestamp(),
-          });
-        }
-        setUser(user);
-      } else {
-        // User is signed out
-        setUser(null);
-      }
-      setIsLoadingAuth(false);
-    });
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
-  }, []);
-
-  /**
-   * Handles Google Sign-In popup.
-   */
-  const handleLogin = async () => {
-    try {
-      await signInWithPopup(auth, googleProvider);
-      // The onAuthStateChanged listener will handle the user state update
-    } catch (error) {
-      console.error('Error during sign-in:', error);
-    }
-  };
-
-  /**
-   * Handles Sign-Out.
-   */
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      // The onAuthStateChanged listener will handle the user state update
-    } catch (error) {
-      console.error('Error during sign-out:', error);
-    }
-  };
 
   /**
    * Simple router to render the active page.
@@ -71,18 +15,18 @@ function App() {
   const renderPage = () => {
     switch (activePage) {
       case 'dashboard':
-        return <DashboardPage user={user} />;
+        return <DashboardPage />;
       case 'positions':
-        return <PositionsPage user={user} />;
+        return <PositionsPage />;
       case 'closed':
-        return <ClosedPositionsPage user={user} />; // Add new case
+        return <ClosedPositionsPage />;
       default:
-        return <DashboardPage user={user} />;
+        return <DashboardPage />;
     }
   };
-  
+
   // Show a global loading spinner while checking auth
-  if (isLoadingAuth) {
+  if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-gray-100">
         <h2 className="text-2xl font-semibold">Loading...</h2>
@@ -97,11 +41,7 @@ function App() {
       activePage={activePage}
       setActivePage={setActivePage}
     >
-      {user ? (
-        renderPage()
-      ) : (
-        <LoginPage handleLogin={handleLogin} />
-      )}
+      {user ? renderPage() : <LoginPage handleLogin={handleLogin} />}
     </AppLayout>
   );
 }

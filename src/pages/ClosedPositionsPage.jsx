@@ -1,9 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { db } from '../firebase';
-import { collection, query, onSnapshot } from 'firebase/firestore';
+import React, { useMemo } from 'react';
+import { usePortfolio } from '../context/PortfolioContext';
 
 // --- Helper Functions ---
-
 const formatCurrency = (value) => {
   if (typeof value !== 'number') {
     value = 0;
@@ -32,70 +30,31 @@ const RenderGainLoss = ({ value, formatter = (val) => val }) => {
   return <span className={colorClass}>{formatter(value)}</span>;
 };
 
+
 /**
  * Renders the page for viewing closed positions.
  */
-const ClosedPositionsPage = ({ user }) => {
-  const [closedPositions, setClosedPositions] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+const ClosedPositionsPage = () => {
+  const { isLoading, closedPositions } = usePortfolio();
 
-  // Effect 1: Listen to Firestore for closed position changes
-  useEffect(() => {
-    if (!user) {
-      setClosedPositions([]);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    const closedCollectionPath = collection(
-      db,
-      'users',
-      user.uid,
-      'closed_positions'
-    );
-    // Sort by exit date, newest first
-    const q = query(closedCollectionPath);
-
-    const unsubscribe = onSnapshot(
-      q,
-      (querySnapshot) => {
-        const positionsData = [];
-        querySnapshot.forEach((doc) => {
-          positionsData.push({ id: doc.id, ...doc.data() });
-        });
-        // Sort in code, as Firestore orderBy() can be complex to set up
-        positionsData.sort((a, b) => new Date(b.exitDate) - new Date(a.exitDate));
-        setClosedPositions(positionsData);
-        setIsLoading(false);
-      },
-      (error) => {
-        console.error('Error fetching closed positions:', error);
-        setIsLoading(false);
-      }
-    );
-    return () => unsubscribe();
-  }, [user]);
-
-  // Effect 2: Calculate total gain/loss
-  const totalPnl = useMemo(() => {
-    return closedPositions.reduce((total, pos) => {
-      const costBasis = pos.amount * pos.fillPrice;
-      const proceeds = pos.amount * pos.exitPrice;
-      return total + (proceeds - costBasis);
-    }, 0);
+  // Calculate gain/loss for each closed position
+  const processedPositions = useMemo(() => {
+    return closedPositions
+      .map((pos) => {
+        const costBasis = pos.amount * pos.fillPrice;
+        const proceeds = pos.amount * pos.exitPrice;
+        const gainLoss = proceeds - costBasis;
+        const gainLossPercent = costBasis === 0 ? 0 : gainLoss / costBasis;
+        return {
+          ...pos,
+          costBasis,
+          proceeds,
+          gainLoss,
+          gainLossPercent,
+        };
+      })
+      .sort((a, b) => new Date(b.exitDate) - new Date(a.exitDate)); // Sort by most recent
   }, [closedPositions]);
-
-
-  if (!user) {
-    return (
-      <div className="rounded-lg bg-white p-6 text-center shadow">
-        <h2 className="text-xl font-semibold text-gray-700">
-          Please log in to see your closed positions.
-        </h2>
-      </div>
-    );
-  }
 
   if (isLoading) {
     return (
@@ -107,23 +66,11 @@ const ClosedPositionsPage = ({ user }) => {
 
   return (
     <div>
-      <div className="mb-4 flex flex-col items-stretch justify-between sm:flex-row sm:items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Closed Positions</h1>
-        <div className="mt-2 rounded-lg bg-white p-4 shadow sm:mt-0">
-          <h3 className="text-sm font-medium uppercase text-gray-500">
-            Total Realized PnL
-          </h3>
-          <div className="mt-1 text-2xl font-semibold">
-            <RenderGainLoss value={totalPnl} formatter={formatCurrency} />
-          </div>
-        </div>
-      </div>
-      
-      {/* Main Table */}
+      <h1 className="mb-4 text-3xl font-bold text-gray-900">Closed Positions</h1>
       <div className="overflow-x-auto rounded-lg bg-white shadow">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
-            <tr className="hidden md:table-row">
+            <tr>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Ticker
               </th>
@@ -134,13 +81,19 @@ const ClosedPositionsPage = ({ user }) => {
                 Entry Date
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Entry Price
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Exit Date
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Fill Price
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Exit Price
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Cost Basis
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Proceeds
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Gain ($)
@@ -151,48 +104,54 @@ const ClosedPositionsPage = ({ user }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
-            {closedPositions.length === 0 && (
+            {processedPositions.length === 0 ? (
               <tr>
-                <td colSpan="8" className="px-4 py-4 text-center text-gray-500">
-                  You have no closed positions.
+                <td colSpan="10" className="px-4 py-4 text-center text-gray-500">
+                  No closed positions yet.
                 </td>
               </tr>
-            )}
-            {closedPositions.map((pos) => {
-              const costBasis = pos.amount * pos.fillPrice;
-              const proceeds = pos.amount * pos.exitPrice;
-              const gainLoss = proceeds - costBasis;
-              const gainLossPercent = costBasis === 0 ? 0 : gainLoss / costBasis;
-
-              return (
-                <tr key={pos.id} className="block hover:bg-gray-50 md:table-row">
-                  <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900 md:table-cell">
+            ) : (
+              processedPositions.map((pos) => (
+                <tr key={pos.id}>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
                     {pos.ticker}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
                     {pos.amount}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
                     {pos.date}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
-                    {formatCurrency(pos.fillPrice)}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
                     {pos.exitDate}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+                    {formatCurrency(pos.fillPrice)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
                     {formatCurrency(pos.exitPrice)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm md:table-cell">
-                    <RenderGainLoss value={gainLoss} formatter={formatCurrency} />
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+                    {formatCurrency(pos.costBasis)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm md:table-cell">
-                    <RenderGainLoss value={gainLossPercent} formatter={formatPercentage} />
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+                    {formatCurrency(pos.proceeds)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm">
+                    <RenderGainLoss
+                      value={pos.gainLoss}
+                      formatter={formatCurrency}
+                    />
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm">
+                    <RenderGainLoss
+                      value={pos.gainLossPercent}
+                      formatter={formatPercentage}
+                    />
                   </td>
                 </tr>
-              );
-            })}
+              ))
+            )}
           </tbody>
         </table>
       </div>
