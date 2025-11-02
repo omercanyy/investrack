@@ -18,13 +18,13 @@ export const getCategoricBeta = (beta) => {
 export const getBetaCategoryClasses = (betaCategory) => {
   switch (betaCategory) {
     case "LOW":
-      return { badge: "bg-green-100 text-green-800", chart: "#22C55E" };
+      return { badge: "bg-green-100 text-green-800", chart: "#22C55E", bg: "bg-green-500" };
     case "MEDIUM":
-      return { badge: "bg-yellow-100 text-yellow-800", chart: "#EAB308" };
+      return { badge: "bg-yellow-100 text-yellow-800", chart: "#EAB308", bg: "bg-yellow-500" };
     case "HIGH":
-      return { badge: "bg-red-100 text-red-800", chart: "#EF4444" };
+      return { badge: "bg-red-100 text-red-800", chart: "#EF4444", bg: "bg-red-500" };
     default:
-      return { badge: "bg-gray-100 text-gray-800", chart: "#6B7280" };
+      return { badge: "bg-gray-100 text-gray-800", chart: "#6B7280", bg: "bg-gray-500" };
   }
 };
 

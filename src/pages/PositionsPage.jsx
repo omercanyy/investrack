@@ -22,6 +22,8 @@ import ClosePositionModal from '../components/ClosePositionModal';
 import { usePortfolio } from '../context/PortfolioContext';
 import { useAuth } from '../context/AuthContext';
 import AdminTools from '../components/AdminTools';
+import { getBetaCategoryClasses } from '../utils/betaCalculator';
+
 
 const formatCurrency = (value) => {
   if (typeof value !== 'number') {
@@ -152,6 +154,7 @@ const AddPositionRow = ({ user }) => {
           placeholder="Ticker"
         />
       </td>
+      <td className="hidden px-3 py-3 md:table-cell"></td>
       <td className="block whitespace-nowrap px-3 py-2 md:table-cell md:py-3">
         <label htmlFor="amount" className="text-xs font-medium text-gray-500 md:hidden">Amount</label>
         <input
@@ -351,6 +354,11 @@ const PositionsPage = () => {
               {ticker}
             </td>
             <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
+              <span
+                className={`h-3 w-3 ${getBetaCategoryClasses(group.betaCategory || 'UNKNOWN').bg} rounded-full inline-block`}
+              ></span>
+            </td>
+            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
               {group.totalAmount}
             </td>
             <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
@@ -417,6 +425,7 @@ const PositionsPage = () => {
                   <td className="whitespace-nowrap px-4 py-2 text-xs font-medium text-gray-700 md:table-cell">
                     -
                   </td>
+                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell"></td>
                   <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
                     {lot.amount}
                   </td>
@@ -484,6 +493,9 @@ const PositionsPage = () => {
               <th className="w-12 px-4 py-3"></th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Ticker
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Risk
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Amount
