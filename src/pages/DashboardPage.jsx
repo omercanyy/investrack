@@ -141,7 +141,12 @@ const RiskPieChart = ({ data }) => {
             ))}
           </Pie>
           <Tooltip formatter={formatCurrencyTooltip} />
-          <Legend />
+          <Legend
+            layout="vertical"
+            align="right"
+            verticalAlign="middle"
+            iconType="circle"
+          />
         </PieChart>
       </ResponsiveContainer>
     </div>
