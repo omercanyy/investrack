@@ -241,40 +241,54 @@ const DashboardPage = () => {
         </StatCard>
       </div>
 
-      <div className="mt-8 rounded-lg bg-white p-6 shadow">
-        <h2 className="text-xl font-semibold text-gray-900">Composition</h2>
-        <PortfolioPieChart
-          data={pieChartData}
-          totalValue={portfolioStats.totalValue}
-        />
-      </div>
-
-      {/* Risk Analysis Section */}
-      <div className="mt-8">
-        <h2 className="text-xl font-semibold mb-4 mt-6">Risk Analysis</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Risk Table */}
-          <div className="rounded-lg bg-white p-6 shadow">
-            <h3 className="text-lg font-semibold mb-4">Risk Table</h3>
-            <div className="overflow-x-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+        <div className="rounded-lg bg-white p-6 shadow">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            Portfolio Composition
+          </h2>
+          <PortfolioPieChart
+            data={pieChartData}
+            totalValue={portfolioStats.totalValue}
+          />
+        </div>
+        <div className="rounded-lg bg-white p-6 shadow">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            Risk Analysis
+          </h2>
+          <RiskPieChart data={betaDistribution} />
+          <details className="mt-4">
+            <summary className="cursor-pointer text-sm font-medium text-gray-600 hover:text-gray-900">
+              Show Details
+            </summary>
+            <div className="overflow-x-auto mt-2">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ticker</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Beta</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Risk Category</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Ticker
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Beta
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Risk Category
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {aggregatedPositions.map((pos) => (
                     <tr key={pos.ticker}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{pos.ticker}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {pos.ticker}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {pos.beta !== null ? pos.beta.toFixed(2) : 'N/A'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <span
-                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getBetaCategoryClasses(pos.betaCategory).badge}`}
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            getBetaCategoryClasses(pos.betaCategory).badge
+                          }`}
                         >
                           {pos.betaCategory}
                         </span>
@@ -284,13 +298,7 @@ const DashboardPage = () => {
                 </tbody>
               </table>
             </div>
-          </div>
-
-          {/* Risk Chart */}
-          <div className="rounded-lg bg-white p-6 shadow">
-            <h3 className="text-lg font-semibold mb-4">Risk Distribution</h3>
-            <RiskPieChart data={betaDistribution} />
-          </div>
+          </details>
         </div>
       </div>
     </div>
