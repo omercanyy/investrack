@@ -404,7 +404,8 @@ const PositionsPage = () => {
 
               return (
                 <tr key={lot.id} className="block bg-gray-50 md:table-row">
-                  <td className="whitespace-nowrap px-4 py-2 text-center md:table-cell">
+                  <td className="whitespace-nowrap px-4 py-2 text-center md:table-cell"></td>
+                  <td className="whitespace-nowrap px-4 py-2 text-xs font-medium text-gray-700 md:table-cell">
                     <div className="flex justify-center space-x-2">
                       <button
                         onClick={() => handleClosePositionClick(lot)}
@@ -421,9 +422,6 @@ const PositionsPage = () => {
                         <TrashIcon />
                       </button>
                     </div>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs font-medium text-gray-700 md:table-cell">
-                    -
                   </td>
                   <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell"></td>
                   <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
