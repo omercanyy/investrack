@@ -94,6 +94,21 @@ const PortfolioPieChart = ({ data, totalValue }) => {
   );
 };
 
+const formatCurrencyTooltip = (value) => {
+  return `$${value.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+};
+
+const formatPieLabel = (entry) => {
+  const value = entry.value;
+  return `$${value.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+};
+
 const RiskPieChart = ({ data }) => {
   if (!data || data.length === 0) {
     return (
@@ -115,7 +130,8 @@ const RiskPieChart = ({ data }) => {
             cy="50%"
             outerRadius={80}
             fill="#8884d8"
-            label
+            labelLine={true}
+            label={formatPieLabel}
           >
             {data.map((entry, index) => (
               <Cell
@@ -124,7 +140,7 @@ const RiskPieChart = ({ data }) => {
               />
             ))}
           </Pie>
-          <Tooltip content={<CustomTooltip totalValue={data.reduce((acc, cur) => acc + cur.value, 0)} />} />
+          <Tooltip formatter={formatCurrencyTooltip} />
           <Legend />
         </PieChart>
       </ResponsiveContainer>
