@@ -188,12 +188,30 @@ export const PortfolioProvider = ({ children }) => {
           ? 0
           : group.gainLoss / group.totalCostBasis;
       group.lots.sort((a, b) => new Date(b.date) - new Date(a.date));
+      group.beta = betas[ticker] || null;
+      group.betaCategory = getCategoricBeta(group.beta);
     });
 
     return Object.values(groups).sort((a, b) =>
       a.ticker.localeCompare(b.ticker)
     );
-  }, [positions, priceData, strategies]);
+  }, [positions, priceData, strategies, betas]);
+
+  const betaDistribution = useMemo(() => {
+    const distribution = {
+      LOW: { name: 'LOW', value: 0 },
+      MEDIUM: { name: 'MEDIUM', value: 0 },
+      HIGH: { name: 'HIGH', value: 0 },
+    };
+
+    aggregatedPositions.forEach((pos) => {
+      if (pos.betaCategory && distribution[pos.betaCategory]) {
+        distribution[pos.betaCategory].value += pos.currentValue;
+      }
+    });
+
+    return Object.values(distribution);
+  }, [aggregatedPositions]);
 
   const portfolioStats = useMemo(() => {
     let totalValue = 0;
@@ -279,6 +297,7 @@ export const PortfolioProvider = ({ children }) => {
     weightedAbsoluteBeta,
     betaCategory,
     absoluteBetaCategory,
+    betaDistribution,
   };
 
   return (

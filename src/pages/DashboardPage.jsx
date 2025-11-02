@@ -94,6 +94,44 @@ const PortfolioPieChart = ({ data, totalValue }) => {
   );
 };
 
+const RiskPieChart = ({ data }) => {
+  if (!data || data.length === 0) {
+    return (
+      <div className="flex h-64 items-center justify-center text-gray-500">
+        No risk data to display.
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ width: '100%', height: 300 }}>
+      <ResponsiveContainer>
+        <PieChart>
+          <Pie
+            data={data}
+            dataKey="value"
+            nameKey="name"
+            cx="50%"
+            cy="50%"
+            outerRadius={80}
+            fill="#8884d8"
+            label
+          >
+            {data.map((entry, index) => (
+              <Cell
+                key={`cell-${index}`}
+                fill={getBetaCategoryColor(entry.name)}
+              />
+            ))}
+          </Pie>
+          <Tooltip content={<CustomTooltip totalValue={data.reduce((acc, cur) => acc + cur.value, 0)} />} />
+          <Legend />
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
 const DashboardPage = () => {
   const {
     isLoading,
@@ -105,6 +143,7 @@ const DashboardPage = () => {
     weightedAbsoluteBeta,
     betaCategory,
     absoluteBetaCategory,
+    betaDistribution,
   } = usePortfolio();
 
   const pieChartData = useMemo(() => {
@@ -212,6 +251,52 @@ const DashboardPage = () => {
           data={pieChartData}
           totalValue={portfolioStats.totalValue}
         />
+      </div>
+
+      {/* Risk Analysis Section */}
+      <div className="mt-8">
+        <h2 className="text-xl font-semibold mb-4 mt-6">Risk Analysis</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Risk Table */}
+          <div className="rounded-lg bg-white p-6 shadow">
+            <h3 className="text-lg font-semibold mb-4">Risk Table</h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ticker</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Beta</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Risk Category</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {aggregatedPositions.map((pos) => (
+                    <tr key={pos.ticker}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{pos.ticker}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {pos.beta !== null ? pos.beta.toFixed(2) : 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <span
+                          className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                          style={{ backgroundColor: getBetaCategoryColor(pos.betaCategory) }}
+                        >
+                          {pos.betaCategory}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Risk Chart */}
+          <div className="rounded-lg bg-white p-6 shadow">
+            <h3 className="text-lg font-semibold mb-4">Risk Distribution</h3>
+            <RiskPieChart data={betaDistribution} />
+          </div>
+        </div>
       </div>
     </div>
   );
