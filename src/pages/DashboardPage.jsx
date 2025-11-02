@@ -8,6 +8,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
+import StatCard from '../components/StatCard';
 
 const formatCurrency = (value) => {
   if (typeof value !== 'number') {
@@ -17,49 +18,6 @@ const formatCurrency = (value) => {
     style: 'currency',
     currency: 'USD',
   }).format(value);
-};
-
-const formatPercentage = (value) => {
-  if (typeof value !== 'number') {
-    value = 0;
-  }
-  const formatted = new Intl.NumberFormat('en-US', {
-    style: 'percent',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-  return value > 0 ? `+${formatted}` : formatted;
-};
-
-const RenderGainLoss = ({ value, formatter = (val) => val }) => {
-  const colorClass =
-    value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-gray-500';
-  return <span className={colorClass}>{formatter(value)}</span>;
-};
-
-const StatCard = ({ title, value, gainLoss, gainLossPercent, isXIRR = false }) => {
-  return (
-    <div className="rounded-lg bg-white p-6 shadow">
-      <h3 className="text-sm font-medium uppercase text-gray-500">{title}</h3>
-      
-      {isXIRR ? (
-        <p className="mt-1 text-3xl font-semibold text-gray-900">
-          <RenderGainLoss value={value} formatter={formatPercentage} />
-        </p>
-      ) : (
-        <p className="mt-1 text-3xl font-semibold text-gray-900">{value}</p>
-      )}
-
-      {gainLoss != null && (
-        <p className="mt-1 text-sm">
-          <RenderGainLoss value={gainLoss} formatter={formatCurrency} />
-          <span className="ml-2">
-            (<RenderGainLoss value={gainLossPercent} formatter={formatPercentage} />)
-          </span>
-        </p>
-      )}
-    </div>
-  );
 };
 
 const COLORS = [
@@ -183,6 +141,8 @@ const DashboardPage = () => {
     );
   }
 
+  const isPositive = portfolioStats.totalGainLoss > 0;
+
   return (
     <div>
       <h1 className="mb-4 text-3xl font-bold text-gray-900">Dashboard</h1>
@@ -190,25 +150,21 @@ const DashboardPage = () => {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         <StatCard
           title="Total Portfolio Value"
-          value={formatCurrency(portfolioStats.totalValue)}
-          gainLoss={portfolioStats.totalGainLoss}
-          gainLossPercent={portfolioStats.totalGainLossPercent}
-        />
+          primaryValue={formatCurrency(portfolioStats.totalValue)}
+        >
+          <p className={`text-sm ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
+            {isPositive ? '+' : '-'}${Math.abs(portfolioStats.totalGainLoss).toFixed(2)} ({portfolioStats.totalGainLossPercent.toFixed(2)}%)
+          </p>
+        </StatCard>
         <StatCard
-          title="Portfolio XIRR"
-          value={xirrValues.portfolio}
-          isXIRR={true}
-        />
-        <StatCard
-          title="Buy & Hold SPY XIRR"
-          value={xirrValues.spy}
-          isXIRR={true}
-        />
-        <StatCard
-          title="Buy & Hold GLD XIRR"
-          value={xirrValues.gld}
-          isXIRR={true}
-        />
+          title="Portfolio XIRR (annualized)"
+          primaryValue={`${(xirrValues.portfolio * 100).toFixed(2)}%`}
+          primaryValueColor={xirrValues.portfolio > 0 ? "text-green-500" : "text-red-500"}
+        >
+          <div className="text-xs text-gray-500 mt-1">
+            <p>S&P 500: {(xirrValues.spy * 100).toFixed(2)}% | Gold: {(xirrValues.gld * 100).toFixed(2)}%</p>
+          </div>
+        </StatCard>
       </div>
 
       <div className="mt-8 rounded-lg bg-white p-6 shadow">
