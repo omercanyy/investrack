@@ -355,7 +355,7 @@ const PositionsPage = () => {
             </td>
             <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
               <span
-                className={`h-3 w-3 ${getBetaCategoryClasses(group.betaCategory || 'UNKNOWN').bg} rounded-full inline-block`}
+                className={`h-3 w-3 ${getBetaCategoryClasses(group.betaCategory || 'UNKNOWN').fill} rounded-full inline-block`}
               ></span>
             </td>
             <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
