@@ -68,8 +68,8 @@ const PortfolioPieChart = ({ data, totalValue }) => {
             cy="50%"
             outerRadius={100}
             fill="#8884d8"
-            label={false}
-            labelLine={false}
+            label={formatCurrencyLabel}
+            labelLine={true}
           >
             {data.map((entry, index) => (
               <Cell
@@ -86,6 +86,7 @@ const PortfolioPieChart = ({ data, totalValue }) => {
             layout="vertical"
             align="right"
             verticalAlign="middle"
+            iconType="circle"
             wrapperStyle={{ paddingLeft: '20px' }}
           />
         </PieChart>
@@ -94,20 +95,7 @@ const PortfolioPieChart = ({ data, totalValue }) => {
   );
 };
 
-const formatCurrencyTooltip = (value) => {
-  return `$${value.toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-};
-
-const formatPieLabel = (entry) => {
-  const value = entry.value;
-  return `$${value.toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-};
+const formatCurrencyLabel = (entry) => formatCurrency(entry.value);
 
 const RiskPieChart = ({ data }) => {
   if (!data || data.length === 0) {
@@ -131,7 +119,7 @@ const RiskPieChart = ({ data }) => {
             outerRadius={80}
             fill="#8884d8"
             labelLine={true}
-            label={formatPieLabel}
+            label={formatCurrencyLabel}
           >
             {data.map((entry, index) => (
               <Cell
@@ -140,12 +128,13 @@ const RiskPieChart = ({ data }) => {
               />
             ))}
           </Pie>
-          <Tooltip formatter={formatCurrencyTooltip} />
+          <Tooltip formatter={(value) => formatCurrency(value)} />
           <Legend
             layout="vertical"
             align="right"
             verticalAlign="middle"
             iconType="circle"
+            wrapperStyle={{ paddingLeft: '20px' }}
           />
         </PieChart>
       </ResponsiveContainer>
