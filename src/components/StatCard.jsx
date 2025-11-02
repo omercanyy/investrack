@@ -8,9 +8,9 @@ const StatCard = ({ title, icon, primaryValue, primaryValueColor, children }) =>
         <h3 className="text-sm font-medium">{title}</h3>
       </div>
       <div className="mt-2">
-        <p className={`text-2xl font-bold ${primaryValueColor || 'text-gray-800'}`}>
+        <div className={`text-2xl font-bold ${primaryValueColor || 'text-gray-800'}`}>
           {primaryValue}
-        </p>
+        </div>
         {children}
       </div>
     </div>

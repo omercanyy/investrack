@@ -8,7 +8,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { getBetaCategoryColor } from '../utils/betaCalculator';
+import { getBetaCategoryClasses } from '../utils/betaCalculator';
 import StatCard from '../components/StatCard';
 
 const formatCurrency = (value) => {
@@ -120,7 +120,7 @@ const RiskPieChart = ({ data }) => {
             {data.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
-                fill={getBetaCategoryColor(entry.name)}
+                fill={getBetaCategoryClasses(entry.name).chart}
               />
             ))}
           </Pie>
@@ -225,8 +225,7 @@ const DashboardPage = () => {
             <div className="flex items-center gap-x-2">
               <span>{weightedBeta.toFixed(2)}</span>
               <span
-                className={`px-2 py-1 text-sm font-medium rounded-full`}
-                style={{ backgroundColor: getBetaCategoryColor(betaCategory) }}
+                className={`px-2 py-1 text-sm font-medium rounded-full ${getBetaCategoryClasses(betaCategory).badge}`}
               >
                 {betaCategory}
               </span>
@@ -236,10 +235,7 @@ const DashboardPage = () => {
           <div className="text-xs text-gray-500 mt-1 flex items-center gap-x-2">
             <p>Absolute: {weightedAbsoluteBeta.toFixed(2)}</p>
             <div
-              className={`w-3 h-3 rounded-full`}
-              style={{
-                backgroundColor: getBetaCategoryColor(absoluteBetaCategory),
-              }}
+              className={`w-3 h-3 rounded-full ${getBetaCategoryClasses(absoluteBetaCategory).badge}`}
             ></div>
           </div>
         </StatCard>
@@ -278,8 +274,7 @@ const DashboardPage = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <span
-                          className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-                          style={{ backgroundColor: getBetaCategoryColor(pos.betaCategory) }}
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getBetaCategoryClasses(pos.betaCategory).badge}`}
                         >
                           {pos.betaCategory}
                         </span>

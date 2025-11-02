@@ -15,13 +15,16 @@ export const getCategoricBeta = (beta) => {
   }
 };
 
-export const getBetaCategoryColor = (betaCategory) => {
-  if (betaCategory === "LOW") {
-    return "#b7e1cd"; // light green
-  } else if (betaCategory === "MEDIUM") {
-    return "#fff2cc"; // light yellow
-  } else if (betaCategory === "HIGH") {
-    return "#f4c7c3"; // light red
+export const getBetaCategoryClasses = (betaCategory) => {
+  switch (betaCategory) {
+    case "LOW":
+      return { badge: "bg-green-100 text-green-800", chart: "#22C55E" };
+    case "MEDIUM":
+      return { badge: "bg-yellow-100 text-yellow-800", chart: "#EAB308" };
+    case "HIGH":
+      return { badge: "bg-red-100 text-red-800", chart: "#EF4444" };
+    default:
+      return { badge: "bg-gray-100 text-gray-800", chart: "#6B7280" };
   }
 };
 
