@@ -93,12 +93,6 @@ export const calculateAllXIRR = async (
       closedPositions,
       totalCurrentValue
     );
-
-    console.log(
-      '--- DEBUG: Portfolio Input (@webcarrot/xirr) ---',
-      JSON.parse(JSON.stringify(portfolioTxs))
-    );
-
     const portfolioResult = portfolioTxs.length > 1 ? await xirr(portfolioTxs) : 0;
 
     const spyTxs = await simulateBenchmark(
@@ -107,12 +101,6 @@ export const calculateAllXIRR = async (
       'SPY.US',
       spyPrice
     );
-
-    console.log(
-      '--- DEBUG: SPY Input (@webcarrot/xirr) ---',
-      JSON.parse(JSON.stringify(spyTxs))
-    );
-
     const spyResult = spyTxs.length > 1 ? await xirr(spyTxs) : 0;
 
     const gldTxs = await simulateBenchmark(
@@ -121,12 +109,6 @@ export const calculateAllXIRR = async (
       'GLD.US',
       gldPrice
     );
-
-    console.log(
-      '--- DEBUG: GLD Input (@webcarrot/xirr) ---',
-      JSON.parse(JSON.stringify(gldTxs))
-    );
-
     const gldResult = gldTxs.length > 1 ? await xirr(gldTxs) : 0;
 
     return {

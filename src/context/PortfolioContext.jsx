@@ -10,6 +10,8 @@ import { db } from '../firebase';
 import { collection, query, onSnapshot } from 'firebase/firestore';
 import { fetchCurrentPrices } from '../utils/api';
 import { calculateAllXIRR } from '../utils/xirr';
+import { getCategoricBeta } from '../utils/betaCalculator';
+
 
 const PortfolioContext = createContext();
 
@@ -27,6 +29,27 @@ export const PortfolioProvider = ({ children }) => {
   const [xirrValues, setXirrValues] = useState({ portfolio: 0, spy: 0, gld: 0 });
   const [realizedGain, setRealizedGain] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [betas, setBetas] = useState({});
+  const [weightedBeta, setWeightedBeta] = useState(0);
+  const [weightedAbsoluteBeta, setWeightedAbsoluteBeta] = useState(0);
+  const [betaCategory, setBetaCategory] = useState('N/A');
+  const [absoluteBetaCategory, setAbsoluteBetaCategory] = useState('N/A');
+
+  useEffect(() => {
+    if (!user) {
+      setBetas({});
+      return;
+    }
+    const betasCollectionPath = collection(db, 'betas');
+    const unsubscribe = onSnapshot(betasCollectionPath, (snapshot) => {
+      const betaData = {};
+      snapshot.forEach((doc) => {
+        betaData[doc.id] = doc.data().beta;
+      });
+      setBetas(betaData);
+    });
+    return () => unsubscribe();
+  }, [user]);
 
   useEffect(() => {
     if (!user) {
@@ -217,6 +240,31 @@ export const PortfolioProvider = ({ children }) => {
     priceData.GLD,
   ]);
 
+  useEffect(() => {
+    if (aggregatedPositions.length === 0 || Object.keys(betas).length === 0) {
+      setWeightedBeta(0);
+      setWeightedAbsoluteBeta(0);
+      setBetaCategory('N/A');
+      return;
+    }
+
+    let totalBetaWeight = 0;
+    let totalAbsBetaWeight = 0;
+
+    aggregatedPositions.forEach(pos => {
+      const beta = betas[pos.ticker] || 1.0; // Default to 1.0 if beta not found
+      const weight = pos.currentValue / portfolioStats.totalValue;
+      totalBetaWeight += beta * weight;
+      totalAbsBetaWeight += Math.abs(beta) * weight;
+    });
+
+    setWeightedBeta(totalBetaWeight);
+    setWeightedAbsoluteBeta(totalAbsBetaWeight);
+    setBetaCategory(getCategoricBeta(totalBetaWeight));
+    setAbsoluteBetaCategory(getCategoricBeta(totalAbsBetaWeight));
+
+  }, [aggregatedPositions, portfolioStats.totalValue, betas]);
+
   const value = {
     positions,
     closedPositions,
@@ -227,6 +275,10 @@ export const PortfolioProvider = ({ children }) => {
     xirrValues,
     realizedGain,
     isLoading,
+    weightedBeta,
+    weightedAbsoluteBeta,
+    betaCategory,
+    absoluteBetaCategory,
   };
 
   return (

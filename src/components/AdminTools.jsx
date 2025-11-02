@@ -6,8 +6,13 @@ import {
   getDocs,
   writeBatch,
   doc,
+  getDoc,
+  setDoc,
+  serverTimestamp,
 } from 'firebase/firestore';
 import { processCSVString } from '../utils/csvParser';
+import { fetchHistoricalRange } from '../utils/api';
+import { calculateBeta } from '../utils/betaCalculator';
 
 const PasteModal = ({
   collectionName,
@@ -80,6 +85,8 @@ const AdminTools = ({ collectionName, title }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoadingBetas, setIsLoadingBetas] = useState(false);
+  const [betaMessage, setBetaMessage] = useState('');
 
   const handlePasteSubmit = async (csvString) => {
     if (!csvString || !user) {
@@ -141,6 +148,80 @@ const AdminTools = ({ collectionName, title }) => {
     setIsLoading(false);
   };
 
+  const handleCalculateBetas = async () => {
+    if (!user) return;
+
+    setIsLoadingBetas(true);
+    setBetaMessage('Starting beta calculation process...');
+
+    try {
+      // 1. Get unique tickers from positions
+      setBetaMessage('Fetching all tickers from your portfolio...');
+      const positionsRef = collection(db, 'users', user.uid, 'positions');
+      const positionsSnap = await getDocs(positionsRef);
+      const tickers = [...new Set(positionsSnap.docs.map(d => d.data().ticker))];
+      setBetaMessage(`Found ${tickers.length} unique tickers.`);
+
+      // 2. Get market data (SPY) for last 3 years
+      const to = new Date();
+      const from = new Date();
+      from.setFullYear(from.getFullYear() - 3);
+      const toStr = to.toISOString().split('T')[0];
+      const fromStr = from.toISOString().split('T')[0];
+
+      setBetaMessage('Fetching 3 years of market data (SPY)...');
+      const marketPrices = await fetchHistoricalRange('SPY.US', fromStr, toStr);
+      if (marketPrices.length === 0) {
+        throw new Error('Could not fetch market data. Aborting.');
+      }
+
+      // 3. Loop and process each ticker
+      let processedCount = 0;
+      for (const ticker of tickers) {
+        processedCount++;
+        setBetaMessage(`(${processedCount}/${tickers.length}) Processing ${ticker}...`);
+
+        const betaDocRef = doc(db, 'betas', ticker);
+        const betaDocSnap = await getDoc(betaDocRef);
+
+        // 4. Check for stale beta
+        if (betaDocSnap.exists()) {
+          const data = betaDocSnap.data();
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          if (data.lastCalculated.toDate() > thirtyDaysAgo) {
+            setBetaMessage(`(${processedCount}/${tickers.length}) ${ticker} has a recent beta. Skipping.`);
+            continue; // Skip to next ticker
+          }
+        }
+
+        // 5. Fetch ticker prices
+        setBetaMessage(`(${processedCount}/${tickers.length}) Fetching prices for ${ticker}...`);
+        const tickerPrices = await fetchHistoricalRange(`${ticker}.US`, fromStr, toStr);
+
+        if (tickerPrices.length < 50) { // ~2 months of trading days
+            setBetaMessage(`(${processedCount}/${tickers.length}) Not enough price data for ${ticker}. Skipping.`);
+            continue;
+        }
+
+        // 6. Calculate and save beta
+        const beta = calculateBeta(tickerPrices, marketPrices);
+        await setDoc(betaDocRef, {
+          beta: beta,
+          lastCalculated: serverTimestamp(),
+        });
+        setBetaMessage(`(${processedCount}/${tickers.length}) Saved new beta for ${ticker}: ${beta.toFixed(2)}`);
+      }
+
+      setBetaMessage('Beta calculation process completed successfully!');
+    } catch (error) {
+      console.error('Error calculating betas:', error);
+      setBetaMessage(`Error: ${error.message}`);
+    }
+
+    setIsLoadingBetas(false);
+  }
+
   return (
     <>
       <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
@@ -159,9 +240,21 @@ const AdminTools = ({ collectionName, title }) => {
           >
             Clear All {title}
           </button>
+          {collectionName === 'positions' && (
+            <button
+              onClick={handleCalculateBetas}
+              disabled={isLoadingBetas}
+              className="rounded-md bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-purple-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Calculate & Cache All Betas
+            </button>
+          )}
         </div>
         {message && (
           <p className="mt-3 text-sm font-medium text-gray-700">{message}</p>
+        )}
+        {betaMessage && (
+          <p className="mt-3 text-sm font-medium text-gray-700">{betaMessage}</p>
         )}
       </div>
 

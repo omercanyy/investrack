@@ -84,7 +84,23 @@ export const fetchHistoricalPrice = async (ticker, date) => {
     }
   } catch (error) {
     console.error(error);
-    return 0;
+  }
+  return 0;
+};
+
+
+export const fetchHistoricalRange = async (ticker, from, to) => {
+  try {
+    const url = `${API_URL}/eod/${ticker}?api_token=${API_KEY}&fmt=json&from=${from}&to=${to}&period=d`;
+    const response = await fetchWithRetry(url);
+    if (!response.ok) {
+      throw new Error(`Historical range API request failed for ${ticker}`);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(error);
+    return [];
   }
 };
 

@@ -93,6 +93,32 @@ const PortfolioPieChart = ({ data, totalValue }) => {
   );
 };
 
+const getBetaCategoryColor = (category) => {
+  switch (category) {
+    case 'LOW':
+      return 'bg-green-100 text-green-800';
+    case 'MEDIUM':
+      return 'bg-yellow-100 text-yellow-800';
+    case 'HIGH':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
+
+const getAbsoluteBetaCategoryColor = (category) => {
+  switch (category) {
+    case 'LOW':
+      return 'bg-green-200 text-green-800';
+    case 'MEDIUM':
+      return 'bg-yellow-200 text-yellow-800';
+    case 'HIGH':
+      return 'bg-red-200 text-red-800';
+    default:
+      return 'bg-gray-200 text-gray-800';
+  }
+};
+
 const DashboardPage = () => {
   const {
     isLoading,
@@ -100,6 +126,10 @@ const DashboardPage = () => {
     portfolioStats,
     xirrValues,
     realizedGain,
+    weightedBeta,
+    weightedAbsoluteBeta,
+    betaCategory,
+    absoluteBetaCategory,
   } = usePortfolio();
 
   const pieChartData = useMemo(() => {
@@ -148,7 +178,7 @@ const DashboardPage = () => {
     <div>
       <h1 className="mb-4 text-3xl font-bold text-gray-900">Dashboard</h1>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Portfolio Value"
           primaryValue={formatCurrency(portfolioStats.totalValue)}
@@ -173,6 +203,30 @@ const DashboardPage = () => {
         >
           <div className="text-xs text-gray-500 mt-1">
             <p>S&P 500: {(xirrValues.spy * 100).toFixed(2)}% | Gold: {(xirrValues.gld * 100).toFixed(2)}%</p>
+          </div>
+        </StatCard>
+        <StatCard
+          title="Weighted Average Portfolio Beta"
+          primaryValue={
+            <div className="flex items-center gap-x-2">
+              <span>{weightedBeta.toFixed(2)}</span>
+              <span
+                className={`px-2 py-1 text-sm font-medium rounded-full ${getBetaCategoryColor(
+                  betaCategory
+                )}`}
+              >
+                {betaCategory}
+              </span>
+            </div>
+          }
+        >
+          <div className="text-xs text-gray-500 mt-1 flex items-center gap-x-2">
+            <p>Absolute: {weightedAbsoluteBeta.toFixed(2)}</p>
+            <div
+              className={`w-3 h-3 rounded-full ${getAbsoluteBetaCategoryColor(
+                absoluteBetaCategory
+              )}`}
+            ></div>
           </div>
         </StatCard>
       </div>
