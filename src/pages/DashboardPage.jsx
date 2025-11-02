@@ -99,6 +99,7 @@ const DashboardPage = () => {
     aggregatedPositions,
     portfolioStats,
     xirrValues,
+    realizedGain,
   } = usePortfolio();
 
   const pieChartData = useMemo(() => {
@@ -156,6 +157,15 @@ const DashboardPage = () => {
             {isPositive ? '+' : '-'}${Math.abs(portfolioStats.totalGainLoss).toFixed(2)} ({portfolioStats.totalGainLossPercent.toFixed(2)}%)
           </p>
         </StatCard>
+        <StatCard
+          title="Realized Gain"
+          primaryValue={`${realizedGain >= 0 ? '+' : '-'}${formatCurrency(
+            Math.abs(realizedGain)
+          )}`}
+          primaryValueColor={
+            realizedGain >= 0 ? 'text-green-500' : 'text-red-500'
+          }
+        />
         <StatCard
           title="Portfolio XIRR (annualized)"
           primaryValue={`${(xirrValues.portfolio * 100).toFixed(2)}%`}

@@ -25,6 +25,7 @@ export const PortfolioProvider = ({ children }) => {
   const [strategies, setStrategies] = useState({});
   const [priceData, setPriceData] = useState({});
   const [xirrValues, setXirrValues] = useState({ portfolio: 0, spy: 0, gld: 0 });
+  const [realizedGain, setRealizedGain] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -74,6 +75,20 @@ export const PortfolioProvider = ({ children }) => {
     });
     return () => unsubscribe();
   }, [user]);
+
+  useEffect(() => {
+    if (!closedPositions || closedPositions.length === 0) {
+      setRealizedGain(0);
+      return;
+    }
+
+    const totalGain = closedPositions.reduce((acc, pos) => {
+      const gain = (pos.exitPrice - pos.fillPrice) * pos.amount;
+      return acc + gain;
+    }, 0);
+
+    setRealizedGain(totalGain);
+  }, [closedPositions]);
 
   useEffect(() => {
     if (!user) {
@@ -210,6 +225,7 @@ export const PortfolioProvider = ({ children }) => {
     aggregatedPositions,
     portfolioStats,
     xirrValues,
+    realizedGain,
     isLoading,
   };
 
