@@ -1,10 +1,30 @@
 
 export const getCategoricBeta = (beta) => {
-  if (beta < 0.8) return 'LOW';
-  if (beta >= 0.8 && beta <= 1.2) return 'MEDIUM';
-  if (beta > 1.2) return 'HIGH';
-  return 'N/A';
+  /*
+    -1.2    0    1.2   2.5
+  | H  |  M  |  L  |  M  |  H  |
+  */
+  if (beta <= -1.2 || beta >= 2.5) {
+    return 'HIGH';
+  } else if (beta >= 1.2 || beta < 0) {
+    return 'MEDIUM';
+  } else if (beta >= 0 && beta < 1.2) {
+    return 'LOW';
+  } else {
+    return 'UNKNOWN';
+  }
 };
+
+export const getBetaCategoryColor = (betaCategory) => {
+  if (betaCategory === "LOW") {
+    return "#b7e1cd"; // light green
+  } else if (betaCategory === "MEDIUM") {
+    return "#fff2cc"; // light yellow
+  } else if (betaCategory === "HIGH") {
+    return "#f4c7c3"; // light red
+  }
+};
+
 
 const calculateReturns = (prices) => {
   const returns = [];

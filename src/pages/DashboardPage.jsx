@@ -8,6 +8,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
+import { getBetaCategoryColor } from '../utils/betaCalculator';
 import StatCard from '../components/StatCard';
 
 const formatCurrency = (value) => {
@@ -91,32 +92,6 @@ const PortfolioPieChart = ({ data, totalValue }) => {
       </ResponsiveContainer>
     </div>
   );
-};
-
-const getBetaCategoryColor = (category) => {
-  switch (category) {
-    case 'LOW':
-      return 'bg-green-100 text-green-800';
-    case 'MEDIUM':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'HIGH':
-      return 'bg-red-100 text-red-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-};
-
-const getAbsoluteBetaCategoryColor = (category) => {
-  switch (category) {
-    case 'LOW':
-      return 'bg-green-200 text-green-800';
-    case 'MEDIUM':
-      return 'bg-yellow-200 text-yellow-800';
-    case 'HIGH':
-      return 'bg-red-200 text-red-800';
-    default:
-      return 'bg-gray-200 text-gray-800';
-  }
 };
 
 const DashboardPage = () => {
@@ -211,9 +186,8 @@ const DashboardPage = () => {
             <div className="flex items-center gap-x-2">
               <span>{weightedBeta.toFixed(2)}</span>
               <span
-                className={`px-2 py-1 text-sm font-medium rounded-full ${getBetaCategoryColor(
-                  betaCategory
-                )}`}
+                className={`px-2 py-1 text-sm font-medium rounded-full`}
+                style={{ backgroundColor: getBetaCategoryColor(betaCategory) }}
               >
                 {betaCategory}
               </span>
@@ -223,9 +197,10 @@ const DashboardPage = () => {
           <div className="text-xs text-gray-500 mt-1 flex items-center gap-x-2">
             <p>Absolute: {weightedAbsoluteBeta.toFixed(2)}</p>
             <div
-              className={`w-3 h-3 rounded-full ${getAbsoluteBetaCategoryColor(
-                absoluteBetaCategory
-              )}`}
+              className={`w-3 h-3 rounded-full`}
+              style={{
+                backgroundColor: getBetaCategoryColor(absoluteBetaCategory),
+              }}
             ></div>
           </div>
         </StatCard>
