@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# agents sub-project
+.venv/
+__pycache__/
+*.pyc
