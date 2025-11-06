@@ -1,10 +1,9 @@
-# agents/tools.py
 import pathlib
 import subprocess
 
 
 # --- Path Safety Configuration ---
-REPO_ROOT = pathlib.Path(__file__).parent.parent.parent.parent.resolve()
+REPO_ROOT = pathlib.Path(__file__).parent.parent.resolve()
 
 def safe_path(file_path: str) -> pathlib.Path:
     """Resolves a user-provided path against the REPO_ROOT."""

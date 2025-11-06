@@ -1,5 +1,5 @@
 from google.adk.agents import LlmAgent
-from ...common_tools import list_repository_files, read_repository_file
+from development_workflow.common_tools import list_directory, read_file
 
 
 spec_writer_agent = LlmAgent(
@@ -9,12 +9,12 @@ spec_writer_agent = LlmAgent(
     instruction=(
         "You are the Senior Engineer. The user has provided a story to "
         "implement. Your job is to analyze this story and "
-        "the existing codebase (using 'list_repository_files' and "
-        "'read_repository_file') to produce a detailed technical "
+        "the existing codebase (using 'list_directory' and "
+        "'read_file') to produce a detailed technical "
         "spec and acceptance criteria for a mid-level engineer. "
         "Save this to state['tech_spec']."
     ),
-    tools=[list_repository_files, read_repository_file],
+    tools=[list_directory, read_file],
     output_key="tech_spec"
 )
 

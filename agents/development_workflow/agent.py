@@ -3,7 +3,7 @@ from google.adk.agents import SequentialAgent, LoopAgent
 from .subagents.spec_writer.agent import spec_writer_agent
 from .subagents.code_reviewer.agent import code_reviewer_agent
 from .subagents.code_implementer.agent import code_implementer_agent
-from .subagents.git_committer.agent import git_committer_agent
+from .subagents.code_commiter.agent import git_committer_agent
 
 
 # --- Define the Loop Agent (Iterative Refinement) ---
@@ -18,7 +18,7 @@ code_refinement_loop = LoopAgent(
 )
 
 # --- Define the Root Sequential Agent ---
-DevelopmentWorkflowAgent = SequentialAgent(
+root_agent = SequentialAgent(
     name="DevelopmentWorkflowAgent",
     sub_agents=[
         spec_writer_agent,
