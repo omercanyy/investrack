@@ -25,7 +25,7 @@ def read_file(path: str) -> str:
 
 def onboard_project() -> str:
     """Reads the project's main README.md file to get context."""
-    readme_path = "../README.md"
+    readme_path = "README.md"
     try:
         return read_file(path=readme_path)
     except Exception as e:
