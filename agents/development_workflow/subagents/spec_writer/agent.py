@@ -2,7 +2,6 @@ from google.adk.agents import LlmAgent
 from development_workflow.common_tools import (
     list_directory,
     read_file,
-    write_file,
     onboard_project
 )
 
@@ -15,9 +14,9 @@ spec_writer_agent = LlmAgent(
 
     ### PHASE 1: ONBOARDING & ANALYSIS (CRITICAL FIRST STEP)
     Before you write *anything*, you MUST understand the project. The user's story may be vague (e.g., 'Fix the format issue'). DO NOT GUESS.
-    1.  Call `read_repository_file` on `README.md` to get project context.
-    2.  Call `list_repository_files` on `src/` to see the project structure. For your task, `src/pages/DashboardPage.jsx` and `src/context/PortfolioContext.jsx` are highly relevant.
-    3.  Based on your analysis, identify the files that need to be changed.
+    1.  Call the `onboard_project` tool to get the project context.
+    2.  Call `list_directory` to see the project files.
+    3.  Call `read_file` to read any file that could be of interest
 
     ### PHASE 2: SPECIFICATION WRITING
     Once you have a clear plan, write the spec. Your spec is the 'ticket' for the mid-level engineer. It must follow these rules:
@@ -45,6 +44,6 @@ spec_writer_agent = LlmAgent(
 
     Your final output is ONLY the raw markdown spec. Start with ````markdown`.
     """,
-    tools=[list_directory, read_file],
+    tools=[onboard_project, list_directory, read_file],
     output_key="tech_spec"
 )

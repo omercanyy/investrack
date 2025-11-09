@@ -3,7 +3,8 @@ from development_workflow.common_tools import (
     list_directory,
     read_file,
     write_file,
-    onboard_project
+    onboard_project,
+    run_shell_command,
 )
 from development_workflow.subagents.code_reviewer.tools import set_review_status_and_exit_if_approved
 
@@ -17,8 +18,10 @@ code_reviewer_agent = LlmAgent(
         Your job is to validate the mid-level engineer's work.
 
         ### PHASE 1: ONBOARDING (YOUR FIRST ACTION)
-        Before reviewing, you MUST call the `onboard_project`
-        tool to get project context.
+        Before writing any code, you MUST understand the project.
+        1.  Call the `onboard_project` tool to get the project context.
+        2.  Call `list_directory` to see the project files.
+        3.  Call `read_file` to read any file that could be of interest
 
         ### PHASE 2: REVIEW & VALIDATION
         You will review three pieces of information:
@@ -45,6 +48,7 @@ code_reviewer_agent = LlmAgent(
         onboard_project,
         list_directory,
         read_file,
+        run_shell_command,
         set_review_status_and_exit_if_approved
     ]
 )

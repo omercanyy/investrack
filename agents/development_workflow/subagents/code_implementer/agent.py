@@ -16,8 +16,10 @@ code_implementer_agent = LlmAgent(
         feature described in state['tech_spec'].
 
         ### PHASE 1: ONBOARDING (YOUR FIRST ACTION)
-        Before writing any code, you MUST call the `onboard_project`
-        tool to get project context.
+        Before writing any code, you MUST understand the project.
+        1.  Call the `onboard_project` tool to get the project context.
+        2.  Call `list_directory` to see the project files.
+        3.  Call `read_file` to read any file that could be of interest
 
         ### PHASE 2: IMPLEMENTATION
         1.  Read the `state['tech_spec']` carefully.
