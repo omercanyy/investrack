@@ -15,6 +15,14 @@ def safe_path(file_path: str) -> pathlib.Path:
     return resolved_path
 
 
+def read_file(path: str) -> str:
+    """Reads the full content of a specified file from the repository."""
+    try:
+        return safe_path(path).read_text()
+    except Exception as e:
+        return f"Error reading file {path}: {e}"
+
+
 def onboard_project() -> str:
     """Reads the project's main README.md file to get context."""
     readme_path = "../README.md"
@@ -22,14 +30,6 @@ def onboard_project() -> str:
         return read_file(path=readme_path)
     except Exception as e:
         return f"Error: Could not read {readme_path}. {e}"
-
-
-def read_file(path: str) -> str:
-    """Reads the full content of a specified file from the repository."""
-    try:
-        return safe_path(path).read_text()
-    except Exception as e:
-        return f"Error reading file {path}: {e}"
 
 
 def write_file(path: str, content: str) -> str:

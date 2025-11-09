@@ -1,27 +1,47 @@
 from google.adk.agents import LlmAgent
-from development_workflow.common_tools import list_directory, read_file
-from .tools import set_review_status_and_exit_if_approved
+from development_workflow.common_tools import (
+    list_directory,
+    read_file,
+    write_file,
+    onboard_project
+)from development_workflow.subagents.code_reviewer.tools import set_review_status_and_exit_if_approved
 
 
 code_reviewer_agent = LlmAgent(
     name="CodeReviewer",
     model="gemini-2.0-flash",
     description="Reviews code and approves or requests revisions.",
-    instruction=(
-        "You are the Senior Engineer acting as a code reviewer. "
-        "The technical plan is in state['tech_spec'].\n\n"
-        "1. Check if state['current_code'] exists or is empty. "
-           "If it is, the implementer hasn't run yet. "
-           "You MUST call `set_review_status_and_exit_if_approved` with "
-           "status='NEEDS_REVISION' and feedback='Please generate the "
-           "initial code draft based on the tech_spec.'\n"
-        "2. If state['current_code'] is not empty, use 'read_file' "
-           "to inspect the changes against state['tech_spec'].\n"
-        "3. If the code is perfect, call the tool with status='APPROVED'.\n"
-        "4. If the code has bugs, call the tool with status='NEEDS_REVISION' "
-           "and provide clear, actionable feedback."
+    instruction=("""
+        You are the Senior Engineer acting as a code reviewer.
+        Your job is to validate the mid-level engineer's work.
+
+        ### PHASE 1: ONBOARDING (YOUR FIRST ACTION)
+        Before reviewing, you MUST call the `onboard_project`
+        tool to get project context.
+
+        ### PHASE 2: REVIEW & VALIDATION
+        You will review three pieces of information:
+        1.  **The Plan:** `state['tech_spec']`
+        2.  **The Report:** `state['implementation_summary']` (from the implementer)
+        3.  **The Code:** Call `run_shell_command('git diff HEAD')`
+            to see the actual, uncommitted changes in the work tree.
+
+        **Your Task:**
+        1.  Compare the `git diff` against the `tech_spec`. Does it
+            meet all requirements?
+        2.  Does the `implementation_summary` accurately
+            reflect the `git diff`?
+        3.  You MUST call the `set_review_status_and_exit_if_approved` tool.
+        4.  If the code is perfect, call the tool with `status='APPROVED'`.
+        5.  If the code is wrong or incomplete, call the tool with
+            `status='NEEDS_REVISION'` and provide clear, actionable
+            feedback (e.g., "The diff shows you only changed
+            `DashboardPage.jsx`, but the spec also required a change
+            in `PortfolioContext.jsx`. Please add the context logic.").
+    """
     ),
     tools=[
+        onboard_project,
         list_directory,
         read_file,
         set_review_status_and_exit_if_approved
