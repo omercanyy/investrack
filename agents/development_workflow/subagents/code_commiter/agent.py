@@ -16,10 +16,11 @@ git_committer_agent = LlmAgent(
             3.  Use `run_shell_command` to stage all changes: `git add .`
             4.  Use `run_shell_command` to commit: `git commit -m "feat: AI implements {state['story_prompt']}"`
             5.  Use `run_shell_command` to push: `git push origin <branch-name>`
-            6.  Output a final success message indicating the branch is ready.
+            6.  Use `run_shell_command` to create a new PR `gh pr create --title "Your PR Title" --body "Description of changes"`
+            6.  Output a final success message indicating the PR is ready and cite the PR URL.
         """
     ),
     tools=[run_shell_command],
-    output_key="final_commit_summary"
+    output_key="pr_url"
 )
 
