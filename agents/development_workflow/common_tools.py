@@ -3,15 +3,25 @@ import subprocess
 
 
 # --- Path Safety Configuration ---
-REPO_ROOT = pathlib.Path(__file__).parent.parent.resolve()
+REPO_ROOT = pathlib.Path(__file__).parent.parent.parent.resolve()
+
 
 def safe_path(file_path: str) -> pathlib.Path:
-    """Resolves a user-provided path against the REPO_ROOT."""
+    """Resolves a agent-provided path against the REPO_ROOT."""
     resolved_path = (REPO_ROOT / file_path).resolve()
     # Check if REPO_ROOT is a parent of the resolved path
     if REPO_ROOT != resolved_path and REPO_ROOT not in resolved_path.parents:
         raise ValueError("Error: Path is outside the repository boundary.")
     return resolved_path
+
+
+def onboard_project() -> str:
+    """Reads the project's main README.md file to get context."""
+    readme_path = "../README.md"
+    try:
+        return read_file(path=readme_path)
+    except Exception as e:
+        return f"Error: Could not read {readme_path}. {e}"
 
 
 def read_file(path: str) -> str:
