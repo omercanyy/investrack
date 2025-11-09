@@ -28,10 +28,11 @@ spec_writer_agent = LlmAgent(
     Trust the mid-level engineer to write the code. Do not provide large, copy-paste code blocks. Focus on the high-level logic.
 
     * **DO THIS (Good):**
-        1.  Update `src/pages/DashboardPage.jsx`:
-            * Find the `StatCard` with the title 'Total Portfolio Value'.
-            * Locate the child `<p>` tag that displays the unrealized gain.
-            * The logic `(isPositive ? '+' : '-')${Math.abs(portfolioStats.totalGainLoss).toFixed(2)}` is incorrect for formatting. Replace it. Use the `formatCurrency` function already available in the file to format `portfolioStats.totalGainLoss`.
+        1.  Update `src/pages/SomePage.jsx`:
+            * Find the `SomeComponent` with the title 'SomeView'.
+            * Locate the child `<html-tag>` tag.
+            * The logic <enter-code-snippet> is incorrect. Replace it by using `xyz()` function already available in the file <enter-file-name>. 
+        2. ...
 
     * **AVOID THIS (Bad):**
         `function getMyNewData() { ... 20 lines of code ... }`
