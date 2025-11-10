@@ -11,8 +11,8 @@ code_refinement_loop = LoopAgent(
     name="CodeRefinementLoop",
     max_iterations=5,
     sub_agents=[
+        code_implementer_agent,
         code_reviewer_agent,
-        code_implementer_agent
     ],
     description="Iteratively reviews and refines code."
 )
