@@ -191,6 +191,7 @@ const AddPositionRow = ({ user }) => {
       <td className="hidden px-3 py-3 md:table-cell"></td>
       <td className="hidden px-3 py-3 md:table-cell"></td>
       <td className="hidden px-3 py-3 md:table-cell"></td>
+      <td className="hidden px-3 py-3 md:table-cell"></td>
       <td className="block whitespace-nowrap px-3 py-2 text-left md:table-cell md:py-3" colSpan="2">
         {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
         <button
@@ -327,7 +328,7 @@ const PositionsPage = () => {
     if (aggregatedPositions.length === 0) {
       return (
         <tr>
-          <td colSpan="11" className="px-4 py-4 text-center text-gray-500">
+          <td colSpan="12" className="px-4 py-4 text-center text-gray-500">
             No positions added yet. Use the row below to add one.
           </td>
         </tr>
@@ -378,6 +379,9 @@ const PositionsPage = () => {
                 ticker={ticker}
                 currentStrategy={group.strategy}
               />
+            </td>
+            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
+              {formatCurrency(group.weightedAvgFillPrice)}
             </td>
             <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
               {group.totalAmount}
@@ -444,6 +448,9 @@ const PositionsPage = () => {
                     />
                   </td>
                   <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
+                    -
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
                     {formatCurrency(lot.fillPrice)}
                   </td>
                   <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
@@ -507,7 +514,10 @@ const PositionsPage = () => {
                 Gain (%)
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Strategy / Fill Price
+                Strategy
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Avg Fill Price / Fill Price
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Amount

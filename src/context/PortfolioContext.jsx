@@ -187,6 +187,8 @@ export const PortfolioProvider = ({ children }) => {
         group.totalCostBasis === 0
           ? 0
           : group.gainLoss / group.totalCostBasis;
+      group.weightedAvgFillPrice =
+        group.totalAmount === 0 ? 0 : group.totalCostBasis / group.totalAmount;
       group.lots.sort((a, b) => new Date(b.date) - new Date(a.date));
       group.beta = betas[ticker] || null;
       group.betaCategory = getCategoricBeta(group.beta);
@@ -306,4 +308,3 @@ export const PortfolioProvider = ({ children }) => {
     </PortfolioContext.Provider>
   );
 };
-
