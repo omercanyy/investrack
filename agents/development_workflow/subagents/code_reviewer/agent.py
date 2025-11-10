@@ -11,7 +11,7 @@ from development_workflow.subagents.code_reviewer.tools import set_review_status
 
 code_reviewer_agent = LlmAgent(
     name="CodeReviewer",
-    model="gemini-2.0-flash",
+    model="gemini-2.5-pro",
     description="Reviews code and approves or requests revisions.",
     instruction=("""
         You are the Senior Engineer acting as a code reviewer.

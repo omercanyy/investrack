@@ -7,7 +7,7 @@ from development_workflow.common_tools import (
 
 spec_writer_agent = LlmAgent(
     name="SpecWriter",
-    model="gemini-2.0-flash",
+    model="gemini-2.5-pro",
     description="Generates a technical spec from a user story.",
     instruction="""
     You are the Senior Engineer for the 'investrack' project. Your job is to take a user's story and create a technical spec for a mid-level engineer.

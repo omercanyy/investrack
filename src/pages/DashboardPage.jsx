@@ -208,7 +208,7 @@ const DashboardPage = () => {
           primaryValue={formatCurrency(portfolioStats.totalValue)}
         >
           <p className={`text-sm ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
-            {isPositive ? '+' : '-'}${Math.abs(portfolioStats.totalGainLoss).toFixed(2)} ({portfolioStats.totalGainLossPercent.toFixed(2)}%)
+            {isPositive ? '+' : ''}{formatCurrency(portfolioStats.totalGainLoss)} ({portfolioStats.totalGainLossPercent.toFixed(2)}%)
           </p>
         </StatCard>
         <StatCard
@@ -316,4 +316,3 @@ const DashboardPage = () => {
 };
 
 export default DashboardPage;
-
