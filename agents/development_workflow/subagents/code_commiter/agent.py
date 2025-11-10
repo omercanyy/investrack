@@ -25,8 +25,7 @@ git_committer_agent = LlmAgent(
             6. Use `run_shell_command` to create a PR. The title should be the
                commit message, and the body should be the .
                `gh pr create --title "<commit-message>" --body "<implementation_summary>"`
-            7. Before you return final results switch back to the main branch. Make sure there are not uncommitted changes before you switch back.
-            8. Output a final success message with the link to the PR created.
+            7. Output a final success message with the link to the PR created.
         """
     ),
     tools=[run_shell_command],
