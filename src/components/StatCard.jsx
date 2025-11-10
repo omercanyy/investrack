@@ -1,18 +1,18 @@
 import React from 'react';
 
-const StatCard = ({ title, icon, primaryValue, primaryValueColor, children }) => {
+const StatCard = ({ title, value, type }) => {
+  let formattedValue = value;
+
+  if (type === 'currency') {
+    formattedValue = value.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  } else if (type === 'percentage') {
+    formattedValue = (value * 100).toFixed(2) + '%';
+  }
+
   return (
-    <div className="bg-white p-4 rounded-lg shadow-md flex-1">
-      <div className="flex items-center text-gray-500">
-        {icon && <div className="mr-2">{icon}</div>}
-        <h3 className="text-sm font-medium">{title}</h3>
-      </div>
-      <div className="mt-2">
-        <div className={`text-2xl font-bold ${primaryValueColor || 'text-gray-800'}`}>
-          {primaryValue}
-        </div>
-        {children}
-      </div>
+    <div className="bg-white shadow rounded-lg p-4">
+      <h3 className="text-lg font-medium text-gray-700">{title}</h3>
+      <p className="text-2xl font-bold text-gray-900">{formattedValue}</p>
     </div>
   );
 };
