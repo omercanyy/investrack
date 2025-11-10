@@ -8,10 +8,10 @@ REPO_ROOT = pathlib.Path(__file__).parent.parent.parent.resolve()
 
 def safe_path(file_path: str) -> pathlib.Path:
     """Resolves a agent-provided path against the REPO_ROOT."""
-    resolved_path = (REPO_ROOT / file_path).resolve()
+    resolved_path = (REPO_ROOT / file_path.lstrip('/')).resolve()
     # Check if REPO_ROOT is a parent of the resolved path
     if REPO_ROOT != resolved_path and REPO_ROOT not in resolved_path.parents:
-        raise ValueError("Error: Path is outside the repository boundary.")
+        raise ValueError(f"Error: Path {resolved_path} is outside the repository boundary.")
     return resolved_path
 
 
