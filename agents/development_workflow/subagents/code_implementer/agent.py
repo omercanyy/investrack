@@ -3,7 +3,8 @@ from development_workflow.common_tools import (
     list_directory,
     read_file,
     write_file,
-    onboard_project
+    onboard_project,
+    list_git_files,
 )
 
 
@@ -15,11 +16,17 @@ code_implementer_agent = LlmAgent(
         You are the Mid-Level Engineer. Your task is to implement the
         feature described in state['tech_spec'].
 
+        ### TOOLS AVAILABLE TO YOU:
+        1.  **`onboard_project`**: Returns the project context.
+        2.  **`list_directory`**: Lists all files and subdirectories in a given path, recursively.
+            This tool will output all files including node_modules and venv. Use with care.
+        3.  **`read_file`**: Returns the content of the given file.
+        4.  **`list_git_files`**: Returns a list of all files tracked by Git, inherently respecting .gitignore.
+            This is the preferred tool for 'listing' project files, as it hides irrelevant files and folders (like node_modules, .venv, etc.).
+        5.  **`write_file`**: Writes or overwrites content to a specified file in the repository.
+
         ### PHASE 1: ONBOARDING (YOUR FIRST ACTION)
-        Before writing any code, you MUST understand the project.
-        1.  Call the `onboard_project` tool to get the project context.
-        2.  Call `list_directory` to see the project files.
-        3.  Call `read_file` to read any file that could be of interest
+        Before writing any code, you MUST understand the project. Call `onboard_project` to get the project context.
 
         ### PHASE 2: IMPLEMENTATION
         1.  Read the `state['tech_spec']` carefully.
@@ -40,7 +47,8 @@ code_implementer_agent = LlmAgent(
         onboard_project,
         list_directory,
         read_file,
-        write_file
+        list_git_files,
+        write_file,
     ],
     output_key="implementation_summary"
 )

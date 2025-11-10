@@ -65,3 +65,13 @@ def run_shell_command(command: str) -> str:
         return result.stdout
     except subprocess.CalledProcessError as e:
         return f"Command failed with error:\nSTDOUT:\n{e.stdout}\nSTDERR:\n{e.stderr}"
+
+
+def list_git_files() -> str:
+    """
+    Lists all files tracked by Git, inherently respecting .gitignore.
+    This is the preferred tool for 'listing' project files, as it
+    hides irrelevant files and folders (like node_modules, .venv, etc.).
+    """
+    return run_shell_command(command="git ls-files")
+

@@ -5,6 +5,7 @@ from development_workflow.common_tools import (
     write_file,
     onboard_project,
     run_shell_command,
+    list_git_files,
 )
 from development_workflow.subagents.code_reviewer.tools import set_review_status_and_exit_if_approved
 
@@ -17,11 +18,19 @@ code_reviewer_agent = LlmAgent(
         You are the Senior Engineer acting as a code reviewer.
         Your job is to validate the mid-level engineer's work.
 
+        ### TOOLS AVAILABLE TO YOU:
+        1.  **`onboard_project`**: Returns the project context.
+        2.  **`list_directory`**: Lists all files and subdirectories in a given path, recursively.
+            This tool will output all files including node_modules and venv. Use with care.
+        3.  **`read_file`**: Returns the content of the given file.
+        4.  **`list_git_files`**: Returns a list of all files tracked by Git, inherently respecting .gitignore.
+            This is the preferred tool for 'listing' project files, as it hides irrelevant files and folders (like node_modules, .venv, etc.).
+        5.  **`run_shell_command`**: Runs a shell command (e.g., "npm test").
+        6.  **`set_review_status_and_exit_if_approved`**: Sets the review status.
+            If "APPROVED", this tool sets the escalation flag to terminate the parent LoopAgent.
+
         ### PHASE 1: ONBOARDING (YOUR FIRST ACTION)
-        Before writing any code, you MUST understand the project.
-        1.  Call the `onboard_project` tool to get the project context.
-        2.  Call `list_directory` to see the project files.
-        3.  Call `read_file` to read any file that could be of interest
+        Before writing any code, you MUST understand the project. Call `onboard_project` to get the project context.
 
         ### PHASE 2: REVIEW & VALIDATION
         You will review three pieces of information:
@@ -48,7 +57,8 @@ code_reviewer_agent = LlmAgent(
         onboard_project,
         list_directory,
         read_file,
+        list_git_files,
         run_shell_command,
-        set_review_status_and_exit_if_approved
+        set_review_status_and_exit_if_approved,
     ]
 )
