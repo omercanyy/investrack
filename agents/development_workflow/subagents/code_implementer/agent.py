@@ -9,7 +9,7 @@ from development_workflow.common_tools import (
 
 code_implementer_agent = LlmAgent(
     name="CodeImplementer",
-    model="gemini-2.0-flash",
+    model="gemini-2.5-pro",
     description="Implements or refines code based on spec and feedback.",
     instruction=("""
         You are the Mid-Level Engineer. Your task is to implement the
