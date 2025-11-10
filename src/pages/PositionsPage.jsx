@@ -142,7 +142,9 @@ const AddPositionRow = ({ user }) => {
 
   return (
     <tr className="block bg-gray-50 align-top md:table-row">
+      {/* 1. Icon Column */}
       <td className="hidden px-3 py-3 md:table-cell"></td>
+      {/* 2. Ticker Column */}
       <td className="block whitespace-nowrap px-3 py-2 md:table-cell md:py-3">
         <label htmlFor="ticker" className="text-xs font-medium text-gray-500 md:hidden">Ticker</label>
         <input
@@ -154,18 +156,17 @@ const AddPositionRow = ({ user }) => {
           placeholder="Ticker"
         />
       </td>
+      {/* 3. Cost Basis Column */}
       <td className="hidden px-3 py-3 md:table-cell"></td>
-      <td className="block whitespace-nowrap px-3 py-2 md:table-cell md:py-3">
-        <label htmlFor="amount" className="text-xs font-medium text-gray-500 md:hidden">Amount</label>
-        <input
-          id="amount"
-          type="number"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          placeholder="Amount"
-        />
-      </td>
+      {/* 4. Current Price Column */}
+      <td className="hidden px-3 py-3 md:table-cell"></td>
+      {/* 5. Gain ($) Column */}
+      <td className="hidden px-3 py-3 md:table-cell"></td>
+      {/* 6. Gain (%) Column */}
+      <td className="hidden px-3 py-3 md:table-cell"></td>
+      {/* 7. Strategy Column */}
+      <td className="hidden px-3 py-3 md:table-cell"></td>
+      {/* 8. Avg Fill Price / Fill Price Column */}
       <td className="block whitespace-nowrap px-3 py-2 md:table-cell md:py-3">
         <label htmlFor="fillPrice" className="text-xs font-medium text-gray-500 md:hidden">Fill Price</label>
         <input
@@ -178,6 +179,21 @@ const AddPositionRow = ({ user }) => {
           placeholder="Price"
         />
       </td>
+      {/* 9. Amount Column */}
+      <td className="block whitespace-nowrap px-3 py-2 md:table-cell md:py-3">
+        <label htmlFor="amount" className="text-xs font-medium text-gray-500 md:hidden">Amount</label>
+        <input
+          id="amount"
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          placeholder="Amount"
+        />
+      </td>
+      {/* 10. Current Value Column */}
+      <td className="hidden px-3 py-3 md:table-cell"></td>
+      {/* 11. First Entry / Entry Date Column */}
       <td className="block whitespace-nowrap px-3 py-2 md:table-cell md:py-3">
         <label htmlFor="date" className="text-xs font-medium text-gray-500 md:hidden">Date</label>
         <input
@@ -188,10 +204,8 @@ const AddPositionRow = ({ user }) => {
           className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
         />
       </td>
-      <td className="hidden px-3 py-3 md:table-cell"></td>
-      <td className="hidden px-3 py-3 md:table-cell"></td>
-      <td className="hidden px-3 py-3 md:table-cell"></td>
-      <td className="block whitespace-nowrap px-3 py-2 text-left md:table-cell md:py-3" colSpan="2">
+      {/* 12. Risk Column */}
+      <td className="block whitespace-nowrap px-3 py-2 text-left md:table-cell md:py-3">
         {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
         <button
           type="button"
@@ -327,7 +341,7 @@ const PositionsPage = () => {
     if (aggregatedPositions.length === 0) {
       return (
         <tr>
-          <td colSpan="11" className="px-4 py-4 text-center text-gray-500">
+          <td colSpan="12" className="px-4 py-4 text-center text-gray-500">
             No positions added yet. Use the row below to add one.
           </td>
         </tr>
@@ -378,6 +392,9 @@ const PositionsPage = () => {
                 ticker={ticker}
                 currentStrategy={group.strategy}
               />
+            </td>
+            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
+              {formatCurrency(group.weightedAvgFillPrice)}
             </td>
             <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
               {group.totalAmount}
@@ -444,6 +461,9 @@ const PositionsPage = () => {
                     />
                   </td>
                   <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
+                    -
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
                     {formatCurrency(lot.fillPrice)}
                   </td>
                   <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
@@ -507,7 +527,10 @@ const PositionsPage = () => {
                 Gain (%)
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Strategy / Fill Price
+                Strategy
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Avg Fill Price / Fill Price
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Amount
