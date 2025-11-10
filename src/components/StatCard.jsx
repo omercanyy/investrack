@@ -1,6 +1,6 @@
 import React from 'react';
 
-const StatCard = ({ title, value, type }) => {
+const StatCard = ({ label, value, type }) => {
   let formattedValue = value;
 
   if (type === 'currency') {
@@ -11,7 +11,7 @@ const StatCard = ({ title, value, type }) => {
 
   return (
     <div className="bg-white shadow rounded-lg p-4">
-      <h3 className="text-lg font-medium text-gray-700">{title}</h3>
+      <h3 className="text-lg font-medium text-gray-700">{label}</h3>
       <p className="text-2xl font-bold text-gray-900">{formattedValue}</p>
     </div>
   );

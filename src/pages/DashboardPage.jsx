@@ -205,7 +205,8 @@ const DashboardPage = () => {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Portfolio Value"
-          primaryValue={formatCurrency(portfolioStats.totalValue)}
+          value={portfolioStats.totalValue}
+          type="currency"
         >
           <p className={`text-sm ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
             {isPositive ? '+' : '-'}${Math.abs(portfolioStats.totalGainLoss).toFixed(2)} ({portfolioStats.totalGainLossPercent.toFixed(2)}%)
@@ -213,17 +214,13 @@ const DashboardPage = () => {
         </StatCard>
         <StatCard
           title="Realized Gain"
-          primaryValue={`${realizedGain >= 0 ? '+' : '-'}${formatCurrency(
-            Math.abs(realizedGain)
-          )}`}
-          primaryValueColor={
-            realizedGain >= 0 ? 'text-green-500' : 'text-red-500'
-          }
+          value={realizedGain}
+          type="currency"
         />
         <StatCard
           title="Portfolio XIRR (annualized)"
-          primaryValue={`${(xirrValues.portfolio * 100).toFixed(2)}%`}
-          primaryValueColor={xirrValues.portfolio > 0 ? "text-green-500" : "text-red-500"}
+          value={xirrValues.portfolio * 100}
+          type="percentage"
         >
           <div className="text-xs text-gray-500 mt-1">
             <p>S&P 500: {(xirrValues.spy * 100).toFixed(2)}% | Gold: {(xirrValues.gld * 100).toFixed(2)}%</p>
@@ -231,7 +228,7 @@ const DashboardPage = () => {
         </StatCard>
         <StatCard
           title="Weighted Average Portfolio Beta"
-          primaryValue={
+          value={
             <div className="flex items-center gap-x-2">
               <span>{weightedBeta.toFixed(2)}</span>
               <span
