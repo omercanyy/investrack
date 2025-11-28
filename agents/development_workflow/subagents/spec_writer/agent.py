@@ -47,7 +47,7 @@ spec_writer_agent = LlmAgent(
             You may encounter cases where user fails to word their requirements properly. 
             Especially for bug fixes that are not clearly defined in the project file.
         
-        **4. Consider any changes that needs to be made to the README.md. This could be marking a story as `DONE` or adding or removing a story that is newly discovered or obsolete.
+        **4. Consider any changes that needs to be made to the README.md. This could be marking a story as `Done` or adding or removing a story that is newly discovered or obsolete.
 
         **4. Required Spec Structure:**
         * `# [FEAT] Title of the Story`

@@ -217,7 +217,7 @@ Long-term ideas for a "v2" of the app.
 
 | Story ID | Description | Status |
 | :--- | :--- | :--- |
-| 6.1 | "[Auth] Create a new ""Connect to Schwab"" button in the app (e.g., in Layout or a new Settings page) that redirects the user to the Schwab login & consent screen." | To Do |
+| 6.1 | "[Auth] Create a new ""Connect to Schwab"" button in the app (e.g., in Layout or a new Settings page) that redirects the user to the Schwab login & consent screen." | Done |
 | 6.2 | "[Auth] Create a new page at /auth/schwab/callback to handle the redirect from Schwab. This page will be responsible for parsing the `code` from the URL." | To Do |
 | 6.3 | "[Auth] Implement the server-side logic (as a new Firebase Function) to securely exchange the `code` for an `access_token` and `refresh_token` from the Schwab API." | To Do |
 | 6.4 | "[Auth] Securely store the encrypted `refresh_token` in a new Firestore collection (e.g., `user_credentials/{userId}`) associated with the user." | To Do |
