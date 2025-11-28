@@ -46,11 +46,14 @@ spec_writer_agent = LlmAgent(
         **3. Clarification:** Based on the code you read from related files, ask any clarificaitons to the user. 
             You may encounter cases where user fails to word their requirements properly. 
             Especially for bug fixes that are not clearly defined in the project file.
+        
+        **4. Consider any changes that needs to be made to the README.md. This could be marking a story as `DONE` or adding or removing a story that is newly discovered or obsolete.
 
         **4. Required Spec Structure:**
         * `# [FEAT] Title of the Story`
         * `### Goal`: A clear 1-2 sentence goal.
         * `### Tasks`: A list of which files to touch and the high-level logic to add (like the 'Good' example above).
+        * `### Documentation`: A list of changes to the documentation, specifically to the README.md.
         * `### Acceptance Criteria`: A checklist you will use to verify the work is complete (e.g., 'The unrealized gain on the dashboard StatCard is now formatted as a currency, like $1,234.50.')
 
         Your final output should be the raw markdown spec ONLY.`.
