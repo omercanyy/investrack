@@ -1,10 +1,11 @@
 from google.adk.agents import LlmAgent
 from development_workflow.common_tools import (
+    onboard_project,
     list_directory,
     read_file,
-    write_file,
-    onboard_project,
     list_git_files,
+    write_file,
+    run_shell_command,
 )
 
 
@@ -24,11 +25,13 @@ code_implementer_agent = LlmAgent(
         4.  **`list_git_files`**: Returns a list of all files tracked by Git, inherently respecting .gitignore.
             This is the preferred tool for 'listing' project files, as it hides irrelevant files and folders (like node_modules, .venv, etc.).
         5.  **`write_file`**: Writes or overwrites content to a specified file in the repository.
+        6.  **`run_shell_command`**: Runs a shell command (e.g., "git status").
 
         ### PHASE 1: ONBOARDING (YOUR FIRST ACTION)
         Before writing any code, you MUST understand the project. Call `onboard_project` to get the project context.
 
         ### PHASE 2: IMPLEMENTATION
+        0.  Before anything else you have to make sure you are on the main branch with a clean working tree.
         1.  Read the `state['tech_spec']` carefully.
         2.  If `state['review_feedback']` exists, you MUST address
             the feedback to fix your previous implementation.
