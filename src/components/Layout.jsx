@@ -114,6 +114,12 @@ const SidebarLink = ({ icon, name, href, isActive, onClick }) => {
 };
 
 const TopBar = ({ user, handleLogout, setIsSidebarOpen }) => {
+  const handleConnectToSchwab = () => {
+    // TODO: Replace with the actual Schwab OAuth URL, including client_id and redirect_uri
+    const schwabAuthUrl = 'https://api.schwabapi.com/v1/oauth/authorize?client_id=[YOUR_CLIENT_ID]&redirect_uri=[YOUR_REDIRECT_URI]';
+    window.location.href = schwabAuthUrl;
+  };
+
   return (
     <header className="flex h-16 w-full items-center justify-between bg-white px-4 shadow-md md:px-8">
       <button
@@ -137,6 +143,12 @@ const TopBar = ({ user, handleLogout, setIsSidebarOpen }) => {
               {user.displayName}
             </span>
             <button
+              onClick={handleConnectToSchwab}
+              className="rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+            >
+              Connect to Schwab
+            </button>
+            <button
               onClick={handleLogout}
               className="rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
             >
@@ -152,4 +164,3 @@ const TopBar = ({ user, handleLogout, setIsSidebarOpen }) => {
     </header>
   );
 };
-
