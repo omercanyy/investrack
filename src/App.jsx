@@ -4,10 +4,16 @@ import { AppLayout } from './components/Layout';
 import DashboardPage from './pages/DashboardPage';
 import PositionsPage from './pages/PositionsPage';
 import ClosedPositionsPage from './pages/ClosedPositionsPage';
+import SchwabCallbackPage from './pages/SchwabCallbackPage';
 
 function App() {
   const { user, isLoading, handleLogin, handleLogout } = useAuth();
   const [activePage, setActivePage] = useState('dashboard');
+
+  // Handle Schwab callback route
+  if (window.location.pathname === '/auth/schwab/callback') {
+    return <SchwabCallbackPage />;
+  }
 
   const renderPage = () => {
     switch (activePage) {
@@ -60,4 +66,3 @@ const LoginPage = ({ handleLogin }) => {
 };
 
 export default App;
-
