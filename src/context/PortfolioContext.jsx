@@ -7,11 +7,15 @@ import React, {
 } from 'react';
 import { useAuth } from './AuthContext';
 import { db } from '../firebase';
-import { collection, query, onSnapshot } from 'firebase/firestore';
-import { fetchCurrentPrices } from '../utils/api';
+import {
+  collection,
+  query,
+  onSnapshot,
+  doc,
+} from 'firebase/firestore';
+import { fetchCurrentPrices } from '../utils/schwabApi';
 import { calculateAllXIRR } from '../utils/xirr';
 import { getCategoricBeta } from '../utils/betaCalculator';
-
 
 const PortfolioContext = createContext();
 
@@ -34,6 +38,19 @@ export const PortfolioProvider = ({ children }) => {
   const [weightedAbsoluteBeta, setWeightedAbsoluteBeta] = useState(0);
   const [betaCategory, setBetaCategory] = useState('N/A');
   const [absoluteBetaCategory, setAbsoluteBetaCategory] = useState('N/A');
+  const [isSchwabConnected, setIsSchwabConnected] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      setIsSchwabConnected(false);
+      return;
+    }
+    const statusDocPath = doc(db, 'users', user.uid, 'status', 'schwab');
+    const unsubscribe = onSnapshot(statusDocPath, (snapshot) => {
+      setIsSchwabConnected(snapshot.exists() && snapshot.data().connected);
+    });
+    return () => unsubscribe();
+  }, [user]);
 
   useEffect(() => {
     if (!user) {
@@ -46,6 +63,7 @@ export const PortfolioProvider = ({ children }) => {
       snapshot.forEach((doc) => {
         betaData[doc.id] = doc.data().beta;
       });
+      console.log('Received updated beta values:', betaData);
       setBetas(betaData);
     });
     return () => unsubscribe();
@@ -130,17 +148,15 @@ export const PortfolioProvider = ({ children }) => {
   }, [user]);
 
   useEffect(() => {
-    if (!positions || positions.length === 0) {
+    if (!positions || positions.length === 0 || !isSchwabConnected) {
       setPriceData({});
       return;
     }
 
-    const uniqueTickers = [
-      ...new Set(positions.map((p) => `${p.ticker}.US`)),
-    ];
-    
-    if (!uniqueTickers.includes('SPY.US')) uniqueTickers.push('SPY.US');
-    if (!uniqueTickers.includes('GLD.US')) uniqueTickers.push('GLD.US');
+    const uniqueTickers = [...new Set(positions.map((p) => p.ticker))];
+
+    if (!uniqueTickers.includes('SPY')) uniqueTickers.push('SPY');
+    if (!uniqueTickers.includes('GLD')) uniqueTickers.push('GLD');
 
     const fetchAllPrices = async () => {
       try {
@@ -154,7 +170,7 @@ export const PortfolioProvider = ({ children }) => {
     fetchAllPrices();
     const intervalId = setInterval(fetchAllPrices, 300000);
     return () => clearInterval(intervalId);
-  }, [positions]);
+  }, [positions, isSchwabConnected]);
 
   const aggregatedPositions = useMemo(() => {
     const groups = {};
@@ -239,7 +255,6 @@ export const PortfolioProvider = ({ children }) => {
     }
 
     const runXirr = async () => {
-
       const rates = await calculateAllXIRR(
         positions,
         closedPositions,
@@ -271,7 +286,7 @@ export const PortfolioProvider = ({ children }) => {
     let totalBetaWeight = 0;
     let totalAbsBetaWeight = 0;
 
-    aggregatedPositions.forEach(pos => {
+    aggregatedPositions.forEach((pos) => {
       const beta = betas[pos.ticker] || 1.0; // Default to 1.0 if beta not found
       const weight = pos.currentValue / portfolioStats.totalValue;
       totalBetaWeight += beta * weight;
@@ -282,7 +297,6 @@ export const PortfolioProvider = ({ children }) => {
     setWeightedAbsoluteBeta(totalAbsBetaWeight);
     setBetaCategory(getCategoricBeta(totalBetaWeight));
     setAbsoluteBetaCategory(getCategoricBeta(totalAbsBetaWeight));
-
   }, [aggregatedPositions, portfolioStats.totalValue, betas]);
 
   const value = {
@@ -300,6 +314,7 @@ export const PortfolioProvider = ({ children }) => {
     betaCategory,
     absoluteBetaCategory,
     betaDistribution,
+    isSchwabConnected,
   };
 
   return (

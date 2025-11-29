@@ -6,8 +6,11 @@ import PositionsPage from './pages/PositionsPage';
 import ClosedPositionsPage from './pages/ClosedPositionsPage';
 import SchwabCallbackPage from './pages/SchwabCallbackPage';
 
+import { usePortfolio } from './context/PortfolioContext';
+
 function App() {
   const { user, isLoading, handleLogin, handleLogout } = useAuth();
+  const { isSchwabConnected } = usePortfolio();
   const [activePage, setActivePage] = useState('dashboard');
 
   // Handle Schwab callback route
@@ -42,6 +45,7 @@ function App() {
       handleLogout={handleLogout}
       activePage={activePage}
       setActivePage={setActivePage}
+      isSchwabConnected={isSchwabConnected}
     >
       {user ? renderPage() : <LoginPage handleLogin={handleLogin} />}
     </AppLayout>

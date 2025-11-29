@@ -3,17 +3,27 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // This rule allows anyone with your Firestore database reference to view, edit,
-    // and delete all data in your Firestore database. It is useful for getting
-    // started, but it is configured to expire after 30 days because it
-    // leaves your app open to attackers. At that time, all client
-    // requests to your Firestore database will be denied.
-    //
-    // Make sure to write security rules for your app before that time, or else
-    // all client requests to your Firestore database will be denied until you Update
-    // your rules
-    match /{document=**} {
-      allow read, write: if request.time < timestamp.date(2025, 11, 29);
+    // Users can read and create their own user document. They can also update it.
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Users can manage their own positions, closed_positions, and strategies.
+    match /users/{userId}/{collection}/{docId} {
+      allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // The 'betas' collection is a cache. Authenticated users can read from it.
+    // Writes should be handled by a secure backend process.
+    match /betas/{ticker} {
+      allow read: if request.auth != null;
+      allow write: if false; // Disallow client-side writes
+    }
+
+    // User credentials should ONLY be accessible by backend functions.
+    // Deny all client-side access.
+    match /user_credentials/{userId} {
+      allow read, write: if false;
     }
   }
 }

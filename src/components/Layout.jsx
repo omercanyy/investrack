@@ -12,6 +12,7 @@ export const AppLayout = ({
   handleLogout,
   activePage,
   setActivePage,
+  isSchwabConnected,
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
 
@@ -29,6 +30,7 @@ export const AppLayout = ({
           user={user}
           handleLogout={handleLogout}
           setIsSidebarOpen={setIsSidebarOpen}
+          isSchwabConnected={isSchwabConnected}
         />
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
           {children}
@@ -113,11 +115,21 @@ const SidebarLink = ({ icon, name, href, isActive, onClick }) => {
   );
 };
 
-const TopBar = ({ user, handleLogout, setIsSidebarOpen }) => {
+const TopBar = ({ user, handleLogout, setIsSidebarOpen, isSchwabConnected }) => {
   const handleConnectToSchwab = () => {
-    // TODO: Replace with the actual Schwab OAuth URL, including client_id and redirect_uri
-    const schwabAuthUrl = 'https://api.schwabapi.com/v1/oauth/authorize?client_id=[YOUR_CLIENT_ID]&redirect_uri=[YOUR_REDIRECT_URI]';
-    window.location.href = schwabAuthUrl;
+    const clientId = import.meta.env.VITE_SCHWAB_CLIENT_ID;
+    const redirectUri = import.meta.env.VITE_SCHWAB_REDIRECT_URI;
+
+    if (!clientId || !redirectUri) {
+      console.error("Schwab client ID or redirect URI is not configured in .env file.");
+      alert("Schwab integration is not configured. Please contact support.");
+      return;
+    }
+
+    const schwabAuthUrl = `https://api.schwabapi.com/v1/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}`;
+
+    // Open in a new tab
+    window.open(schwabAuthUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -142,12 +154,14 @@ const TopBar = ({ user, handleLogout, setIsSidebarOpen }) => {
             <span className="hidden text-sm font-medium text-gray-700 sm:block">
               {user.displayName}
             </span>
-            <button
-              onClick={handleConnectToSchwab}
-              className="rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-            >
-              Connect to Schwab
-            </button>
+            {!isSchwabConnected && (
+              <button
+                onClick={handleConnectToSchwab}
+                className="rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+              >
+                Connect to Schwab
+              </button>
+            )}
             <button
               onClick={handleLogout}
               className="rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"

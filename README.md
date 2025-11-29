@@ -219,11 +219,11 @@ Long-term ideas for a "v2" of the app.
 | :--- | :--- | :--- |
 | 6.1 | "[Auth] Create a new ""Connect to Schwab"" button in the app (e.g., in Layout or a new Settings page) that redirects the user to the Schwab login & consent screen." | Done |
 | 6.2 | "[Auth] Create a new page at /auth/schwab/callback to handle the redirect from Schwab. This page will be responsible for parsing the `code` from the URL." | Done |
-| 6.3 | "[BE-Auth] Implement the complete Schwab Authentication Service (two callable functions) to securely handle the initial code-to-token exchange AND manage continuous token renewal." | To Do |
-| 6.4 | "[Auth] Securely store the encrypted `refresh_token` in a new Firestore collection (e.g., `user_credentials/{userId}`) associated with the user." | To Do |
-| 6.5 | "[Core] Create a new `src/utils/schwabApi.js` client. This client will manage all API calls, automatically attaching the `access_token` and using the `refresh_token` to get a new `access_token` if one expires." | To Do |
-| 6.6 | "[Refactor] Refactor the `PortfolioContext` to get current prices for all positions using the new `schwabApi.js` client and the `GET /marketdata/v1/quotes` endpoint." | To Do |
-| 6.7 | "[Refactor] Refactor the XIRR calculation for SPY and GLD to use the `schwabApi.js` client and the `GET /marketdata/v1/pricehistory` endpoint (requesting 20 years, daily frequency)." | To Do |
+| 6.3 | "[Auth] Implement the complete Schwab Authentication Service (two callable functions) to securely handle the initial code-to-token exchange AND manage continuous token renewal." | Done |
+| 6.4 | "[Auth] Securely store the encrypted `refresh_token` in a new Firestore collection (e.g., `user_credentials/{userId}`) associated with the user." | Done |
+| 6.5 | "[Core] Create a new `src/utils/schwabApi.js` client. This client will manage all API calls, automatically attaching the `access_token` and using the `refresh_token` to get a new `access_token` if one expires." | Done |
+| 6.6 | "[Refactor] Refactor the `PortfolioContext` to get current prices for all positions using the new `schwabApi.js` client and the `GET /marketdata/v1/quotes` endpoint." | Done |
+| 6.7 | "[Refactor] Refactor the XIRR calculation for SPY and GLD to use the `schwabApi.js` client and the `GET /marketdata/v1/pricehistory` endpoint (requesting 20 years, daily frequency)." | Done |
 | 6.8 | "[Refactor] Completely remove the manual Beta calculation from `AdminTools`. Replace it with a new `AdminTools` function that calls `GET /marketdata/v1/quotes` with `fields=fundamental` for all tickers and saves the `beta` value to the `betas` collection." | To Do |
 | 6.9 | "[Cleanup] Deprecate and remove the old `src/utils/api.js` (EODHD client) and all related `EODHD_API_KEY` environment variables." | To Do |
 

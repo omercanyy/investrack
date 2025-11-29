@@ -1,5 +1,5 @@
 import { xirr } from '@webcarrot/xirr';
-import { fetchHistoricalPrice } from './api';
+import schwabApi from './schwabApi';
 
 function prepareTransactions(positions, closedPositions, totalCurrentValue) {
   const transactions = [];
@@ -30,6 +30,36 @@ function prepareTransactions(positions, closedPositions, totalCurrentValue) {
   }
 
   return transactions;
+}
+
+async function fetchHistoricalPrice(ticker, date) {
+  const endDate = new Date(date).getTime();
+  const startDate = new Date(date);
+  startDate.setFullYear(startDate.getFullYear() - 20);
+  const endpoint = `/marketdata/v1/pricehistory?symbol=${ticker}&periodType=year&period=20&frequencyType=daily&frequency=1&endDate=${endDate}&startDate=${startDate.getTime()}`;
+
+  try {
+    const response = await schwabApi(endpoint);
+    const candles = response.candles;
+    if (!candles || candles.length === 0) {
+      return 0;
+    }
+
+    // Find the candle for the specific date
+    const targetDate = new Date(date);
+    const targetTimestamp = targetDate.getTime();
+    const candle = candles.find(c => {
+      const candleDate = new Date(c.datetime);
+      return candleDate.getFullYear() === targetDate.getFullYear() &&
+             candleDate.getMonth() === targetDate.getMonth() &&
+             candleDate.getDate() === targetDate.getDate();
+    });
+
+    return candle ? candle.close : 0;
+  } catch (error) {
+    console.error(`Error fetching historical price for ${ticker}:`, error);
+    return 0;
+  }
 }
 
 async function simulateBenchmark(
@@ -98,7 +128,7 @@ export const calculateAllXIRR = async (
     const spyTxs = await simulateBenchmark(
       positions,
       closedPositions,
-      'SPY.US',
+      'SPY',
       spyPrice
     );
     const spyResult = spyTxs.length > 1 ? await xirr(spyTxs) : 0;
@@ -106,7 +136,7 @@ export const calculateAllXIRR = async (
     const gldTxs = await simulateBenchmark(
       positions,
       closedPositions,
-      'GLD.US',
+      'GLD',
       gldPrice
     );
     const gldResult = gldTxs.length > 1 ? await xirr(gldTxs) : 0;

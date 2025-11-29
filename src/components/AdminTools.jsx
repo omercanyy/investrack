@@ -11,8 +11,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { processCSVString } from '../utils/csvParser';
-import { fetchHistoricalRange } from '../utils/api';
-import { calculateBeta } from '../utils/betaCalculator';
+import schwabApi from '../utils/schwabApi';
 
 const PasteModal = ({
   collectionName,
@@ -162,58 +161,28 @@ const AdminTools = ({ collectionName, title }) => {
       const tickers = [...new Set(positionsSnap.docs.map(d => d.data().ticker))];
       setBetaMessage(`Found ${tickers.length} unique tickers.`);
 
-      // 2. Get market data (SPY) for last 3 years
-      const to = new Date();
-      const from = new Date();
-      from.setFullYear(from.getFullYear() - 3);
-      const toStr = to.toISOString().split('T')[0];
-      const fromStr = from.toISOString().split('T')[0];
+      // 2. Fetch fundamental data from Schwab API
+      const symbols = tickers.join(',');
+      const endpoint = `/marketdata/v1/quotes?symbols=${symbols}&fields=fundamental`;
+      const response = await schwabApi(endpoint);
 
-      setBetaMessage('Fetching 3 years of market data (SPY)...');
-      const marketPrices = await fetchHistoricalRange('SPY.US', fromStr, toStr);
-      if (marketPrices.length === 0) {
-        throw new Error('Could not fetch market data. Aborting.');
-      }
-
-      // 3. Loop and process each ticker
+      // 3. Loop and save each ticker's beta
+      const batch = writeBatch(db);
       let processedCount = 0;
-      for (const ticker of tickers) {
-        processedCount++;
-        setBetaMessage(`(${processedCount}/${tickers.length}) Processing ${ticker}...`);
-
-        const betaDocRef = doc(db, 'betas', ticker);
-        const betaDocSnap = await getDoc(betaDocRef);
-
-        // 4. Check for stale beta
-        if (betaDocSnap.exists()) {
-          const data = betaDocSnap.data();
-          const thirtyDaysAgo = new Date();
-          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-          if (data.lastCalculated.toDate() > thirtyDaysAgo) {
-            setBetaMessage(`(${processedCount}/${tickers.length}) ${ticker} has a recent beta. Skipping.`);
-            continue; // Skip to next ticker
-          }
+      for (const ticker in response) {
+        const fundamentalData = response[ticker].fundamental;
+        if (fundamentalData && fundamentalData.beta) {
+          const betaDocRef = doc(db, 'betas', ticker);
+          batch.set(betaDocRef, {
+            beta: fundamentalData.beta,
+            lastCalculated: serverTimestamp(),
+          });
+          processedCount++;
         }
-
-        // 5. Fetch ticker prices
-        setBetaMessage(`(${processedCount}/${tickers.length}) Fetching prices for ${ticker}...`);
-        const tickerPrices = await fetchHistoricalRange(`${ticker}.US`, fromStr, toStr);
-
-        if (tickerPrices.length < 50) { // ~2 months of trading days
-            setBetaMessage(`(${processedCount}/${tickers.length}) Not enough price data for ${ticker}. Skipping.`);
-            continue;
-        }
-
-        // 6. Calculate and save beta
-        const beta = calculateBeta(tickerPrices, marketPrices);
-        await setDoc(betaDocRef, {
-          beta: beta,
-          lastCalculated: serverTimestamp(),
-        });
-        setBetaMessage(`(${processedCount}/${tickers.length}) Saved new beta for ${ticker}: ${beta.toFixed(2)}`);
       }
+      await batch.commit();
+      setBetaMessage(`Successfully updated beta for ${processedCount} tickers.`);
 
-      setBetaMessage('Beta calculation process completed successfully!');
     } catch (error) {
       console.error('Error calculating betas:', error);
       setBetaMessage(`Error: ${error.message}`);
