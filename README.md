@@ -62,13 +62,21 @@ This outlines the key technologies and services currently used to run the applic
     * **Deployment:** Firebase Hosting
 ## Data Structure
 
-* `users/{userId}`: Stores basic user profile info.
-* `positions/{positionId}`: Subcollection for all **current** position lots.
-    * `{ ticker, amount, fillPrice, date, createdAt }`
-* `closed_positions/{closedId}`: Subcollection for all **closed** position lots.
-    * `{ ticker, amount, fillPrice, date, exitPrice, exitDate, closedAt }`
-* `strategies/{ticker}`: Subcollection to store the user-defined strategy for each ticker.
-    * `{ strategy: "Long" }`
+All user-specific data is stored in subcollections under the corresponding user's document.
+
+*   `users/{userId}`: Stores basic user profile info and status flags.
+    *   `status/schwab`: Document indicating if the user's Schwab account is connected.
+*   `users/{userId}/positions/{positionId}`: Subcollection for a user's **current** position lots.
+    *   `{ ticker, amount, fillPrice, date, createdAt }`
+*   `users/{userId}/closed_positions/{closedId}`: Subcollection for a user's **closed** position lots.
+    *   `{ ticker, amount, fillPrice, date, exitPrice, exitDate, closedAt }`
+*   `users/{userId}/strategies/{ticker}`: Subcollection storing the user-defined strategy for each ticker.
+    *   `{ strategy: "Long" }`
+
+The following collections are stored at the root level:
+
+*   `betas/{ticker}`: A read-only cache of calculated Beta values for each ticker.
+*   `user_credentials/{userId}`: A secure, backend-only collection to store sensitive credentials like Schwab refresh tokens.
 
 ## Project Architecture & File Overview
 
@@ -215,10 +223,10 @@ Pre-launch security stuff.
 
 | Story ID | Description | Status |
 | :--- | :--- | :--- |
-| 7.1 | "As a user, I want my data secured by production-ready Firestore rules, ensuring users can only read/write their own `positions`, `closed_positions`, and `strategies`." | To Do |
-| 7.2 | "As a dev, I want to implement Admin-level privileges (e.g., via custom claims) to secure admin-only functions, like the ""Calculate Betas"" tool." | To Do |
+| 7.1 | "As a user, I want my data secured by production-ready Firestore rules, ensuring users can only read/write their own `positions`, `closed_positions`, and `strategies`." | Done |
+| 7.2 | "[Clarified] All users have full control over their own data, so a special 'admin' role with custom claims is not needed. Firestore rules already ensure users can only access their own data." | Done |
 | 7.3 | "As a dev, I want to review and deploy all necessary Firestore indexes (via `firestore.indexes.json`) to prevent query failures in production." | To Do |
-| 7.4 | "As a dev, I want to review and configure API key and domain restrictions in Firebase and Google Cloud to protect our quota and prevent unauthorized use." | To Do |
+| 7.4 | "As a dev, I want to review and configure API key and domain restrictions in Firebase and Google Cloud to protect our quota and prevent unauthorized use." | Done |
 
 ### Epic 8: Schwab Integration (Phase 2): Account Sync
 To use the established Schwab connection (from Epic 6) to allow users to import and sync their actual brokerage positions, replacing the need for manual CSV/form entry.
