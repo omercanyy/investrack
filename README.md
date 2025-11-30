@@ -52,8 +52,8 @@ This outlines the key technologies and services currently used to run the applic
 * **Frontend:**
     * **Framework:** React 18+ (using Vite)
     * **Styling:** Tailwind CSS
-    * **UI Components:** Headless UI (for modals, dropdowns)
-    * **Icons:** Heroicons
+    * **UI Components:** Replaced Headless UI with custom-built components for modals and dropdowns to reduce dependency overhead.
+    * **Icons:** Removed Heroicons; using inline SVG or simple CSS icons instead.
     * **Charting:** Recharts
 * **Backend & Platform:**
     * **Platform:** Firebase
@@ -87,11 +87,10 @@ The application is a **client-side React application** that relies on Firebase f
 1.  **Schwab API Authentication**
     The `schwabApi.js` client communicates with a dedicated Firebase Function (`refreshSchwabToken`) to exchange the user's authorization code for an access token and to handle subsequent token refreshes. This is essential for securely managing API credentials and ensuring continuous access to the Schwab API.
 
-3.  **Beta Calculation Architecture**
-    The Beta calculation is a critical, multi-step process that bridges the client and the database:
-    * **Trigger:** The user (an admin) navigates to the `AdminTools` component (currently on the `PositionsPage`).
-    * **Fetch:** The user clicks "Calculate & Cache All Betas." This triggers a function that fetches data for all tickers in the `positions` collection, plus `SPY`.
-    * **Process:** This large data set is passed to the `calculateBeta` utility in `src/utils/betaCalculator.js`, which performs the statistical analysis (covariance, variance) and returns a Beta value for each ticker.
+2.  **Beta Calculation Architecture**
+    The Beta calculation is now performed on the client-side within the `PortfolioContext`.
+    * **Trigger:** The `PortfolioContext` fetches historical price data for each ticker and `SPY` from the Schwab API.
+    * **Process:** The data is passed to the `calculateBeta` utility in `src/utils/betaCalculator.js`, which performs the statistical analysis (covariance, variance) and returns a Beta value for each ticker.
     * **Cache:** The resulting Beta value is written to the `betas/{ticker}` collection in Firestore.
     * **Read:** All regular users (and the admin) consume this data. The `PortfolioContext` reads from the `betas` collection on load, providing the data to the Dashboard `StatCard` and `Risk Analysis` components.
 
@@ -104,7 +103,7 @@ The `src` directory is organized to separate concerns, making the codebase easie
 * `/src/components`: Reusable presentational components.
     * `Layout.jsx`: The main app shell with sidebar and header.
     * `StatCard.jsx`: The generic card component for the dashboard.
-    * `AdminTools.jsx`: Component to house admin-only actions like Beta calculation.
+    * `AdminTools.jsx`: Component to house admin-only actions like bulk data pasting.
 * `/src/constants`: Shared, app-wide constant values.
     * `colors.js`: Defines shared color schemes (e.g., `RISK_COLORS`).
 * `/src/context`: React Context providers for global state management.
@@ -228,17 +227,27 @@ Pre-launch security stuff.
 | 7.3 | "As a dev, I want to review and deploy all necessary Firestore indexes (via `firestore.indexes.json`) to prevent query failures in production." | To Do |
 | 7.4 | "As a dev, I want to review and configure API key and domain restrictions in Firebase and Google Cloud to protect our quota and prevent unauthorized use." | Done |
 
-### Epic 8: Schwab Integration (Phase 2): Account Sync
-To use the established Schwab connection (from Epic 6) to allow users to import and sync their actual brokerage positions, replacing the need for manual CSV/form entry.
+### Epic 8: Schwab Integration (Phase 2): Real-time Account Sync
+To provide a seamless and up-to-date view of their portfolio, this epic will replace the manual "Sync with Schwab" button with a real-time, periodic data synchronization mechanism. This will involve fetching and merging data from both the Schwab API and the user's manual entries in Firestore.
 
 | Story ID | Description | Status |
 | :--- | :--- | :--- |
-| 8.1 | "[Core] Add a new ""Sync with Schwab"" button to the `PositionsPage`." | To Do |
-| 8.2 | "[Core] Implement the `GET /accounts/v1/accounts` endpoint to fetch the user's list of account numbers. (If multiple, we must provide a UI for them to select one)." | To Do |
-| 8.3 | "[Core] Call the `GET /trading/v1/accounts/{accountHash}/positions` endpoint using the selected account to fetch all current positions." | To Do |
-| 8.4 | "[Data] Create a ""transformer"" utility that maps the Schwab position data (e.g., `SchwabPosition.instrument.symbol`) to our Firestore `positions` data model." | To Do |
-| 8.5 | "[Data] Implement the ""sync"" logic: iterate through the user's Firestore `positions` and merge them with the Schwab data. This must handle three cases: positions only in Schwab (add), positions in both (update), positions only in Firestore (keep, or mark as 'manual')." | To Do |
-| 8.6 | "[Data] Implement the `GET /trading/v1/accounts/{accountHash}/transactions` endpoint to fetch historical transactions." | To Do |
-| 8.7 | "[Data] Create a ""transformer"" utility to map Schwab transactions to our `closed_positions` data model. This is the key to solving the ""unique ID"" problem for closed trades." | To Do |
-| 8.8 | "[UI] Add a ""Last Synced"" timestamp to the UI so the user knows when the data was last pulled." | To Do |
-| 8.9 | "[Future] Investigate using `ACCT_ACTIVITY` streaming (from Trader API - Individual Market Data Production(3).PDF) for a real-time, push-based sync instead of a manual button pull." | To Do |
+| 8.1 | "[Core] On app load, fetch the user's Schwab account positions and merge them with the manually entered positions from Firestore to create a unified portfolio view." | To Do |
+| 8.2 | "[Core] Implement a periodic polling mechanism (e.g., using `setInterval` or `react-query`) in the `PortfolioContext` to automatically refresh Schwab positions and prices every 5 minutes." | To Do |
+| 8.3 | "[Data] Create a new Firestore collection `strategies/{ticker}` to store the user-defined strategy (e.g., ""Long"", ""Momentum"") for each ticker." | To Do |
+| 8.4 | "[UI] In the positions view, display a dropdown for each ticker to allow the user to assign a strategy. This will update the `strategies` collection." | To Do |
+| 8.5 | "[Data] Create a client-side "transformer" utility to map the Schwab position data to the same data model used for Firestore positions." | To Do |
+| 8.6 | "[UI] Add a "Last Synced" timestamp to the UI that updates after each successful Schwab API call." | To Do |
+| 8.7 | "[Future] Investigate using Schwab's streaming API for real-time updates to further improve the user experience and reduce the need for polling." | To Do |
+
+### Epic 9: Schwab Integration (Phase 3): Historical Transaction Sync
+To create a complete and permanent record of a user's trading history, this epic will implement a robust system for fetching, de-duplicating, and storing closed positions from Schwab into Firestore. This will handle both automatic periodic syncs for recent trades and a one-time bulk import for older data.
+
+| Story ID | Description | Status |
+| :--- | :--- | :--- |
+| 9.1 | "[Research] Investigate the Schwab `GET /transactions` API response to determine if a unique, persistent `transactionId` is provided for each trade. This will determine our de-duplication strategy." | To Do |
+| 9.2 | "[Data] Based on the research, design the schema for the `closed_positions` collection. Use the Schwab `transactionId` as the document ID if available, otherwise define a composite key strategy." | To Do |
+| 9.3 | "[Core] Implement a periodic sync to fetch recent transactions from Schwab. For each transaction, check if it already exists in Firestore before writing to prevent duplicates." | To Do |
+| 9.4 | "[Settings] Add a user-configurable "historical data threshold" date. The sync process should ignore any transactions that occurred before this date." | To Do |
+| 9.5 | "[Feature] Build a one-time CSV import tool to allow users to upload their full transaction history (downloaded from Schwab) for a complete historical record." | To Do |
+| 9.6 | "[Data] Create a "transformer" utility to map the data from both the API and the CSV to our `closed_positions` Firestore model." | To Do |
