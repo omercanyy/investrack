@@ -29,10 +29,12 @@ const schwabApi = async (endpoint, options = {}) => {
     Authorization: `Bearer ${token}`,
   };
 
-  const response = await fetch(`https://api.schwabapi.com${endpoint}`, {
-    ...options,
-    headers,
-  });
+  const fetchOptions = { ...options, headers };
+
+  const response = await fetch(
+    `https://api.schwabapi.com${endpoint}`,
+    fetchOptions
+  );
 
   if (response.status === 401) {
     // Access token expired, refresh and retry
@@ -56,14 +58,40 @@ export const fetchCurrentPrices = async (tickers) => {
   const symbols = tickers.join(',');
   console.log('Fetching current prices for tickers:', symbols);
   const endpoint = `/marketdata/v1/quotes?symbols=${symbols}`;
-  const response = await schwabApi(endpoint);
+  // Pass cache option to ensure we get real-time data
+  const response = await schwabApi(endpoint, { cache: 'no-cache' });
 
   const priceData = {};
   for (const ticker in response) {
-    priceData[ticker] = response[ticker].quote.lastPrice;
+    if (response[ticker] && response[ticker].quote) {
+      priceData[ticker] = response[ticker].quote.lastPrice;
+    }
   }
 
   return priceData;
 };
 
-export default schwabApi;
+export const fetchBetaValues = async (tickers) => {
+  const symbols = tickers.join(',');
+  console.log('Fetching beta values for tickers:', symbols);
+  const endpoint = `/marketdata/v1/quotes?symbols=${symbols}&fields=fundamental`;
+  // Use default cache behavior for beta values
+  const response = await schwabApi(endpoint, { cache: 'default' });
+
+  const betaData = {};
+  for (const ticker in response) {
+    if (response[ticker] && response[ticker].fundamental) {
+      betaData[ticker] = response[ticker].fundamental.beta;
+    }
+  }
+  return betaData;
+};
+
+export const fetchHistoricalPrices = async (ticker, date) => {
+  const endDate = new Date(date).getTime();
+  const startDate = new Date(date);
+  startDate.setFullYear(startDate.getFullYear() - 20);
+  const endpoint = `/marketdata/v1/pricehistory?symbol=${ticker}&periodType=year&period=20&frequencyType=daily&frequency=1&endDate=${endDate}&startDate=${startDate.getTime()}`;
+  // Use default cache for historical data
+  return await schwabApi(endpoint, { cache: 'default' });
+};

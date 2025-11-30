@@ -13,7 +13,7 @@ import {
   onSnapshot,
   doc,
 } from 'firebase/firestore';
-import { fetchCurrentPrices } from '../utils/schwabApi';
+import { fetchCurrentPrices, fetchBetaValues } from '../utils/schwabApi';
 import { calculateAllXIRR } from '../utils/xirr';
 import { getCategoricBeta } from '../utils/betaCalculator';
 
@@ -25,18 +25,22 @@ export const usePortfolio = () => {
 
 export const PortfolioProvider = ({ children }) => {
   const { user } = useAuth();
-
   const [positions, setPositions] = useState([]);
   const [closedPositions, setClosedPositions] = useState([]);
   const [strategies, setStrategies] = useState({});
   const [priceData, setPriceData] = useState({});
-  const [xirrValues, setXirrValues] = useState({ portfolio: 0, spy: 0, gld: 0 });
-  const [realizedGain, setRealizedGain] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
   const [betas, setBetas] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [realizedGain, setRealizedGain] = useState(0);
+  const [xirrValues, setXirrValues] = useState({
+    portfolio: 0,
+    spy: 0,
+    gld: 0,
+  });
   const [weightedBeta, setWeightedBeta] = useState(0);
   const [weightedAbsoluteBeta, setWeightedAbsoluteBeta] = useState(0);
   const [betaCategory, setBetaCategory] = useState('N/A');
+
   const [absoluteBetaCategory, setAbsoluteBetaCategory] = useState('N/A');
   const [isSchwabConnected, setIsSchwabConnected] = useState(false);
 
@@ -53,21 +57,23 @@ export const PortfolioProvider = ({ children }) => {
   }, [user]);
 
   useEffect(() => {
-    if (!user) {
+    if (!isSchwabConnected || positions.length === 0) {
       setBetas({});
       return;
     }
-    const betasCollectionPath = collection(db, 'betas');
-    const unsubscribe = onSnapshot(betasCollectionPath, (snapshot) => {
-      const betaData = {};
-      snapshot.forEach((doc) => {
-        betaData[doc.id] = doc.data().beta;
-      });
-      console.log('Received updated beta values:', betaData);
-      setBetas(betaData);
-    });
-    return () => unsubscribe();
-  }, [user]);
+
+    const fetchBetas = async () => {
+      const uniqueTickers = [...new Set(positions.map((p) => p.ticker))];
+      try {
+        const newBetaData = await fetchBetaValues(uniqueTickers);
+        setBetas(newBetaData);
+      } catch (error) {
+        console.error('Error fetching beta values:', error);
+      }
+    };
+
+    fetchBetas();
+  }, [positions, isSchwabConnected]);
 
   useEffect(() => {
     if (!user) {

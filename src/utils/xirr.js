@@ -1,5 +1,5 @@
 import { xirr } from '@webcarrot/xirr';
-import schwabApi from './schwabApi';
+import { fetchHistoricalPrices } from './schwabApi';
 
 function prepareTransactions(positions, closedPositions, totalCurrentValue) {
   const transactions = [];
@@ -33,13 +33,8 @@ function prepareTransactions(positions, closedPositions, totalCurrentValue) {
 }
 
 async function fetchHistoricalPrice(ticker, date) {
-  const endDate = new Date(date).getTime();
-  const startDate = new Date(date);
-  startDate.setFullYear(startDate.getFullYear() - 20);
-  const endpoint = `/marketdata/v1/pricehistory?symbol=${ticker}&periodType=year&period=20&frequencyType=daily&frequency=1&endDate=${endDate}&startDate=${startDate.getTime()}`;
-
   try {
-    const response = await schwabApi(endpoint);
+    const response = await fetchHistoricalPrices(ticker, date);
     const candles = response.candles;
     if (!candles || candles.length === 0) {
       return 0;

@@ -29,7 +29,7 @@ To build a web application that replaces a Google Sheets-based investment tracke
     ```
 
 3.  **Set up environment variables:**
-    Create a `.env` file in the root of the project and add your Firebase and EODHD API keys.
+    Create a `.env` file in the root of the project and add your Firebase API keys.
 
     ```.env
     VITE_API_KEY=your_firebase_api_key
@@ -38,8 +38,6 @@ To build a web application that replaces a Google Sheets-based investment tracke
     VITE_STORAGE_BUCKET=your_firebase_storage_bucket
     VITE_MESSAGING_SENDER_ID=your_firebase_messaging_sender_id
     VITE_APP_ID=your_firebase_app_id
-
-    VITE_EODHD_API_KEY=your_eodhd_api_key
     ```
 
 4.  **Run the development server:**
@@ -62,12 +60,6 @@ This outlines the key technologies and services currently used to run the applic
     * **Authentication:** Firebase Authentication (Email/Password, Google)
     * **Database:** Firestore
     * **Deployment:** Firebase Hosting
-* **Primary Data Source:**
-    * **Provider:** EODHD API
-    * **Usage:**
-        * `GET /eod/{ticker}`: Used for fetching current prices for the portfolio.
-        * `GET /eod/{ticker}?period=y&from=...`: Used for fetching multi-year historical daily prices.
-
 ## Data Structure
 
 * `users/{userId}`: Stores basic user profile info.
@@ -82,23 +74,15 @@ This outlines the key technologies and services currently used to run the applic
 
 ### Core Architecture (Current)
 
-The application is a **client-side React application** that relies on Firebase for its backend-as-a-service (BaaS) capabilities. All business logic, calculations, and API calls currently live and run in the user's browser.
+The application is a **client-side React application** that relies on Firebase for its backend-as-a-service (BaaS) capabilities. While most business logic, calculations, and data fetching run in the user's browser, the application uses a **Firebase Function** to securely handle the Charles Schwab API authentication and token refresh flow.
 
-There are **no custom serverless functions** (e.g., Firebase Functions) in the current architecture.
-
-1.  **User Authentication**
-    Authentication is handled entirely by Firebase Authentication on the client side, managed by `AuthContext.jsx`. All user data in Firestore is secured via `firestore.rules`, which restrict access to data based on the user's authenticated `uid`.
-
-2.  **Data Flow (EODHD)**
-    `PortfolioContext.jsx` is the central state management for all portfolio data.
-    * On load, it fetches the user's `positions` from Firestore.
-    * It then calls the `getPrices` function in `src/utils/api.js` (our EODHD client) to fetch the latest market price for all tickers in the portfolio.
-    * The `VITE_EODHD_API_KEY` environment variable is used on the client to make these API calls.
+1.  **Schwab API Authentication**
+    The `schwabApi.js` client communicates with a dedicated Firebase Function (`refreshSchwabToken`) to exchange the user's authorization code for an access token and to handle subsequent token refreshes. This is essential for securely managing API credentials and ensuring continuous access to the Schwab API.
 
 3.  **Beta Calculation Architecture**
     The Beta calculation is a critical, multi-step process that bridges the client and the database:
     * **Trigger:** The user (an admin) navigates to the `AdminTools` component (currently on the `PositionsPage`).
-    * **Fetch:** The user clicks "Calculate & Cache All Betas." This triggers a function that fetches ~3 years of daily historical data from EODHD for all tickers in the `positions` collection, plus `SPY`.
+    * **Fetch:** The user clicks "Calculate & Cache All Betas." This triggers a function that fetches data for all tickers in the `positions` collection, plus `SPY`.
     * **Process:** This large data set is passed to the `calculateBeta` utility in `src/utils/betaCalculator.js`, which performs the statistical analysis (covariance, variance) and returns a Beta value for each ticker.
     * **Cache:** The resulting Beta value is written to the `betas/{ticker}` collection in Firestore.
     * **Read:** All regular users (and the admin) consume this data. The `PortfolioContext` reads from the `betas` collection on load, providing the data to the Dashboard `StatCard` and `Risk Analysis` components.
@@ -123,7 +107,7 @@ The `src` directory is organized to separate concerns, making the codebase easie
     * `PositionsPage.jsx`: The table of aggregated positions and lots.
     * `ClosedPositionsPage.jsx`: Table of all realized gains/losses.
 * `/src/utils`: Helper modules, utilities, and API clients.
-    * `api.js`: The dedicated client for all EODHD API interactions.
+    * `schwabApi.js`: The dedicated client for all Schwab API interactions.
     * `betaCalculator.js`: Logic for calculating and categorizing Beta.
     * `xirr.js`: The internal XIRR calculation function.
     * `csvParser.js`: Logic for parsing the user-uploaded CSV.
@@ -145,7 +129,6 @@ Welcome! To ramp up on this project quickly, please follow these "golden rules":
     * **Global App State** (e.g., user, `aggregatedPositions`): Handled by `AuthContext` and `PortfolioContext`.
     * **Routing State** (e.g., `activePage`): Handled by `App.jsx`.
     * **Local UI State** (e.g., `isModalOpen`): Handled by the component that needs it (e.g., `PositionsPage.jsx`).
-5.  **API CALLS:** All external API logic (fetch, retry, cache) lives in `src/utils/api.js`.
 
 ## Epics & Stories
 
@@ -224,8 +207,8 @@ Long-term ideas for a "v2" of the app.
 | 6.5 | "[Core] Create a new `src/utils/schwabApi.js` client. This client will manage all API calls, automatically attaching the `access_token` and using the `refresh_token` to get a new `access_token` if one expires." | Done |
 | 6.6 | "[Refactor] Refactor the `PortfolioContext` to get current prices for all positions using the new `schwabApi.js` client and the `GET /marketdata/v1/quotes` endpoint." | Done |
 | 6.7 | "[Refactor] Refactor the XIRR calculation for SPY and GLD to use the `schwabApi.js` client and the `GET /marketdata/v1/pricehistory` endpoint (requesting 20 years, daily frequency)." | Done |
-| 6.8 | "[Refactor] Completely remove the manual Beta calculation from `AdminTools`. Replace it with a new `AdminTools` function that calls `GET /marketdata/v1/quotes` with `fields=fundamental` for all tickers and saves the `beta` value to the `betas` collection." | To Do |
-| 6.9 | "[Cleanup] Deprecate and remove the old `src/utils/api.js` (EODHD client) and all related `EODHD_API_KEY` environment variables." | To Do |
+| 6.8 | "[Refactor] Completely remove the manual Beta calculation from `AdminTools`. Replace it with a new `AdminTools` function that calls `GET /marketdata/v1/quotes` with `fields=fundamental` for all tickers and saves the `beta` value to the `betas` collection." | Done |
+| 6.9 | "[Cleanup] Deprecate and remove the old `src/utils/api.js` (EODHD client) and all related `EODHD_API_KEY` environment variables." | Done |
 
 ### Epic 7: Future & Advanced Features (To Do)
 Pre-launch security stuff.

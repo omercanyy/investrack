@@ -11,7 +11,6 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { processCSVString } from '../utils/csvParser';
-import schwabApi from '../utils/schwabApi';
 
 const PasteModal = ({
   collectionName,
@@ -84,8 +83,6 @@ const AdminTools = ({ collectionName, title }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isLoadingBetas, setIsLoadingBetas] = useState(false);
-  const [betaMessage, setBetaMessage] = useState('');
 
   const handlePasteSubmit = async (csvString) => {
     if (!csvString || !user) {
@@ -147,50 +144,6 @@ const AdminTools = ({ collectionName, title }) => {
     setIsLoading(false);
   };
 
-  const handleCalculateBetas = async () => {
-    if (!user) return;
-
-    setIsLoadingBetas(true);
-    setBetaMessage('Starting beta calculation process...');
-
-    try {
-      // 1. Get unique tickers from positions
-      setBetaMessage('Fetching all tickers from your portfolio...');
-      const positionsRef = collection(db, 'users', user.uid, 'positions');
-      const positionsSnap = await getDocs(positionsRef);
-      const tickers = [...new Set(positionsSnap.docs.map(d => d.data().ticker))];
-      setBetaMessage(`Found ${tickers.length} unique tickers.`);
-
-      // 2. Fetch fundamental data from Schwab API
-      const symbols = tickers.join(',');
-      const endpoint = `/marketdata/v1/quotes?symbols=${symbols}&fields=fundamental`;
-      const response = await schwabApi(endpoint);
-
-      // 3. Loop and save each ticker's beta
-      const batch = writeBatch(db);
-      let processedCount = 0;
-      for (const ticker in response) {
-        const fundamentalData = response[ticker].fundamental;
-        if (fundamentalData && fundamentalData.beta) {
-          const betaDocRef = doc(db, 'betas', ticker);
-          batch.set(betaDocRef, {
-            beta: fundamentalData.beta,
-            lastCalculated: serverTimestamp(),
-          });
-          processedCount++;
-        }
-      }
-      await batch.commit();
-      setBetaMessage(`Successfully updated beta for ${processedCount} tickers.`);
-
-    } catch (error) {
-      console.error('Error calculating betas:', error);
-      setBetaMessage(`Error: ${error.message}`);
-    }
-
-    setIsLoadingBetas(false);
-  }
-
   return (
     <>
       <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
@@ -209,21 +162,9 @@ const AdminTools = ({ collectionName, title }) => {
           >
             Clear All {title}
           </button>
-          {collectionName === 'positions' && (
-            <button
-              onClick={handleCalculateBetas}
-              disabled={isLoadingBetas}
-              className="rounded-md bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-purple-500 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Calculate & Cache All Betas
-            </button>
-          )}
         </div>
         {message && (
           <p className="mt-3 text-sm font-medium text-gray-700">{message}</p>
-        )}
-        {betaMessage && (
-          <p className="mt-3 text-sm font-medium text-gray-700">{betaMessage}</p>
         )}
       </div>
 
