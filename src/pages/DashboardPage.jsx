@@ -4,6 +4,8 @@ import { getBetaCategoryClasses } from '../utils/betaCalculator';
 import StatCard from '../components/StatCard';
 import AllocationsTable from '../components/AllocationsTable';
 import CollapsibleCard from '../components/CollapsibleCard';
+import StrategyAllocationsTable from '../components/StrategyAllocationsTable';
+import AccountAllocationsTable from '../components/AccountAllocationsTable';
 
 const formatCurrency = (value) => {
   if (typeof value !== 'number') {
@@ -24,6 +26,7 @@ const accountNames = {
 const DashboardPage = () => {
   const {
     isLoading,
+    positions,
     aggregatedPositions,
     portfolioStats,
     xirrValues,
@@ -34,6 +37,7 @@ const DashboardPage = () => {
     absoluteBetaCategory,
     betaDistribution,
     availableCash,
+    priceData,
   } = usePortfolio();
 
   const totalCash = Object.values(availableCash).reduce((sum, cash) => sum + cash, 0);
@@ -115,11 +119,27 @@ const DashboardPage = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-        <CollapsibleCard title="Portfolio Composition">
+        <CollapsibleCard title="Allocations by Ticker">
           <AllocationsTable
             positions={aggregatedPositions}
             totalValue={portfolioStats.totalValue}
             cash={totalCash}
+          />
+        </CollapsibleCard>
+        <CollapsibleCard title="Allocations by Strategy">
+          <StrategyAllocationsTable
+            positions={aggregatedPositions}
+            totalValue={portfolioStats.totalValue}
+            cash={totalCash}
+          />
+        </CollapsibleCard>
+        <CollapsibleCard title="Allocations by Account">
+          <AccountAllocationsTable
+            positions={positions}
+            totalValue={portfolioStats.totalValue}
+            cashByAccount={availableCash}
+            accountNames={accountNames}
+            priceData={priceData}
           />
         </CollapsibleCard>
         <CollapsibleCard title="Risk Analysis">
