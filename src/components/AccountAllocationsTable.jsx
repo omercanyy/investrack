@@ -10,6 +10,14 @@ const formatCurrency = (value) => {
   }).format(value);
 };
 
+const toTitleCase = (str) => {
+  if (!str) return '';
+  return str.replace(
+    /\w\S*/g,
+    (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+  );
+};
+
 const AccountAllocationsTable = ({
   positions,
   totalValue,
@@ -23,16 +31,17 @@ const AccountAllocationsTable = ({
   }, {});
 
   const byAccount = positions.reduce((acc, pos) => {
-    let accountId = pos.account || 'Unassigned';
-    if (isNaN(accountId)) {
-      accountId = accountNameToId[accountId.toUpperCase()] || accountId;
+    let accountKey = pos.account || 'Unassigned';
+    if (isNaN(accountKey)) {
+      const upperCaseAccount = accountKey.toUpperCase();
+      accountKey = accountNameToId[upperCaseAccount] || toTitleCase(accountKey);
     }
 
-    if (!acc[accountId]) {
-      acc[accountId] = 0;
+    if (!acc[accountKey]) {
+      acc[accountKey] = 0;
     }
     const currentPrice = priceData[pos.ticker] || 0;
-    acc[accountId] += pos.amount * currentPrice;
+    acc[accountKey] += pos.amount * currentPrice;
     return acc;
   }, {});
 

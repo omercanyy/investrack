@@ -30,6 +30,14 @@ const parseDate = (value) => {
   return date.toISOString().split('T')[0];
 };
 
+const toTitleCase = (str) => {
+  if (!str) return '';
+  return str.replace(
+    /\w\S*/g,
+    (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+  );
+};
+
 const parsePositionsCSV = (data) => {
   const positions = [];
   const strategies = [];
@@ -41,7 +49,7 @@ const parsePositionsCSV = (data) => {
         ticker: ticker,
         fillPrice: parseNumber(row['Entry']),
         amount: parseNumber(row['Quantity']),
-        account: row['Account'] ? row['Account'].trim().toUpperCase() : '',
+        account: row['Account'] ? toTitleCase(row['Account'].trim()) : '',
         createdAt: new Date().toISOString(),
       });
       if (row['Strategy']) {
@@ -68,7 +76,7 @@ const parseClosedPositionsCSV = (data) => {
         ticker: ticker,
         exitPrice: parseNumber(row['Exit']),
         exitDate: parseDate(row['Exit Date']),
-        account: row['Account'] ? row['Account'].trim().toUpperCase() : null,
+        account: row['Account'] ? toTitleCase(row['Account'].trim()) : null,
         closedAt: new Date().toISOString(),
       });
       if (row['Strategy']) {

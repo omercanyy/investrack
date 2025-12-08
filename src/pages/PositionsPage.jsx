@@ -528,20 +528,16 @@ const PositionsPage = () => {
           >
             Collapse All
           </button>
-            <button
-                onClick={handleRefresh}
-                disabled={!isSchwabConnected || isLoading}
-                className="relative inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-                <ArrowPathIcon
-                    className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`}
-                />
-                <span className="ml-2">{isLoading ? 'Refreshing...' : 'Refresh'}</span>
-            </button>
         </div>
       </div>
       
-      <AdminTools collectionName="positions" title="Positions" />
+      <AdminTools
+        collectionName="positions"
+        title="Positions"
+        onRefresh={handleRefresh}
+        isRefreshing={isLoading}
+        isSchwabConnected={isSchwabConnected}
+      />
 
       <div className="overflow-x-auto rounded-lg bg-white shadow">
         <table className="min-w-full divide-y divide-gray-200">

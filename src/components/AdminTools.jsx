@@ -11,6 +11,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { processTSVString } from '../utils/tsvParser';
+import { CloudArrowDownIcon } from './Icons';
 
 const PasteModal = ({
   collectionName,
@@ -78,7 +79,13 @@ const PasteModal = ({
   );
 };
 
-const AdminTools = ({ collectionName, title }) => {
+const AdminTools = ({
+  collectionName,
+  title,
+  onRefresh,
+  isRefreshing,
+  isSchwabConnected,
+}) => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -160,6 +167,18 @@ const AdminTools = ({ collectionName, title }) => {
     <>
       <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
         <div className="flex flex-wrap items-center gap-4">
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              disabled={!isSchwabConnected || isRefreshing}
+              className="relative inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <CloudArrowDownIcon
+                className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`}
+              />
+              <span className="ml-2">{isRefreshing ? 'Refreshing...' : 'Refresh Prices'}</span>
+            </button>
+          )}
           <button
             onClick={() => setIsModalOpen(true)}
             disabled={isLoading}
