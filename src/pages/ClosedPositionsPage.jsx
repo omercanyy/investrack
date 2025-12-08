@@ -78,6 +78,9 @@ const ClosedPositionsPage = () => {
                 Ticker
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Account
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Amount
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -109,7 +112,7 @@ const ClosedPositionsPage = () => {
           <tbody className="divide-y divide-gray-200 bg-white">
             {processedPositions.length === 0 ? (
               <tr>
-                <td colSpan="10" className="px-4 py-4 text-center text-gray-500">
+                <td colSpan="11" className="px-4 py-4 text-center text-gray-500">
                   No closed positions yet.
                 </td>
               </tr>
@@ -118,6 +121,9 @@ const ClosedPositionsPage = () => {
                 <tr key={pos.id}>
                   <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
                     {pos.ticker}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+                    {pos.account}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
                     {pos.amount}

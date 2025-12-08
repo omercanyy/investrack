@@ -34,7 +34,9 @@ function prepareTransactions(positions, closedPositions, totalCurrentValue) {
 
 async function fetchHistoricalPrice(ticker, date) {
   try {
-    const response = await fetchHistoricalPrices(ticker, date);
+    const normalizedDate = new Date(date);
+    normalizedDate.setHours(23, 59, 59, 999);
+    const response = await fetchHistoricalPrices(ticker, normalizedDate);
     const candles = response.candles;
     if (!candles || candles.length === 0) {
       return 0;
@@ -50,7 +52,7 @@ async function fetchHistoricalPrice(ticker, date) {
              candleDate.getDate() === targetDate.getDate();
     });
 
-    return candle ? candle.close : 0;
+    return candle ? candle.close || candle.closePrice : 0;
   } catch (error) {
     console.error(`Error fetching historical price for ${ticker}:`, error);
     return 0;

@@ -64,7 +64,9 @@ export const fetchCurrentPrices = async (tickers) => {
   const priceData = {};
   for (const ticker in response) {
     if (response[ticker] && response[ticker].quote) {
-      priceData[ticker] = response[ticker].quote.lastPrice;
+      priceData[ticker] =
+        response[ticker].quote.lastPrice ||
+        response[ticker].quote.lastPriceInDouble;
     }
   }
 
@@ -74,17 +76,33 @@ export const fetchCurrentPrices = async (tickers) => {
 export const fetchBetaValues = async (tickers) => {
   const symbols = tickers.join(',');
   console.log('Fetching beta values for tickers:', symbols);
-  const endpoint = `/marketdata/v1/quotes?symbols=${symbols}&fields=fundamental`;
+  const endpoint = `/marketdata/v1/instruments?symbol=${symbols}&projection=fundamental`;
   // Use default cache behavior for beta values
   const response = await schwabApi(endpoint, { cache: 'default' });
 
   const betaData = {};
-  for (const ticker in response) {
-    if (response[ticker] && response[ticker].fundamental) {
-      betaData[ticker] = response[ticker].fundamental.beta;
-    }
+  if (response.instruments) {
+    response.instruments.forEach((instrument) => {
+      if (instrument.fundamental) {
+        betaData[instrument.symbol] = instrument.fundamental.beta;
+      }
+    });
   }
   return betaData;
+};
+
+export const fetchAvailableCash = async () => {
+  const endpoint = '/trader/v1/accounts';
+  const response = await schwabApi(endpoint, { cache: 'no-cache' });
+  let totalCash = 0;
+  if (response && Array.isArray(response)) {
+    response.forEach(account => {
+      if (account.securitiesAccount && account.securitiesAccount.currentBalances) {
+        totalCash += account.securitiesAccount.currentBalances.cashAvailableForTrading || 0;
+      }
+    });
+  }
+  return totalCash;
 };
 
 export const fetchHistoricalPrices = async (ticker, date) => {

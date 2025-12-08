@@ -154,6 +154,7 @@ const DashboardPage = () => {
     betaCategory,
     absoluteBetaCategory,
     betaDistribution,
+    availableCash,
   } = usePortfolio();
 
   const pieChartData = useMemo(() => {
@@ -208,7 +209,7 @@ const DashboardPage = () => {
           primaryValue={formatCurrency(portfolioStats.totalValue)}
         >
           <p className={`text-sm ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
-            {isPositive ? '+' : ''}{formatCurrency(portfolioStats.totalGainLoss)} ({portfolioStats.totalGainLossPercent.toFixed(2)}%)
+            {isPositive ? '+' : ''}{formatCurrency(portfolioStats.totalGainLoss)}
           </p>
         </StatCard>
         <StatCard
@@ -219,6 +220,10 @@ const DashboardPage = () => {
           primaryValueColor={
             realizedGain >= 0 ? 'text-green-500' : 'text-red-500'
           }
+        />
+        <StatCard
+          title="Available Cash"
+          primaryValue={formatCurrency(availableCash)}
         />
         <StatCard
           title="Portfolio XIRR (annualized)"

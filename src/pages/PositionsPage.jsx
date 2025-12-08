@@ -16,6 +16,7 @@ import {
   ChevronDownIcon,
   TrashIcon,
   BanknotesIcon,
+  ArrowPathIcon,
 } from '../components/Icons';
 import ConfirmModal from '../components/ConfirmModal';
 import ClosePositionModal from '../components/ClosePositionModal';
@@ -92,16 +93,18 @@ const AddPositionRow = ({ user }) => {
   const [amount, setAmount] = useState('');
   const [fillPrice, setFillPrice] = useState('');
   const [date, setDate] = useState('');
+  const [account, setAccount] = useState('');
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isFormValid = ticker && amount && fillPrice && date;
+  const isFormValid = ticker && amount && fillPrice && date && account;
 
   const resetForm = () => {
     setTicker('');
     setAmount('');
     setFillPrice('');
     setDate('');
+    setAccount('');
     setError(null);
     setIsSubmitting(false);
   };
@@ -130,6 +133,7 @@ const AddPositionRow = ({ user }) => {
         amount: parseFloat(amount),
         fillPrice: parseFloat(fillPrice),
         date: date,
+        account: account.toUpperCase(),
         createdAt: serverTimestamp(),
       });
       resetForm();
@@ -154,6 +158,17 @@ const AddPositionRow = ({ user }) => {
           onChange={(e) => setTicker(e.target.value)}
           className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
           placeholder="Ticker"
+        />
+      </td>
+      <td className="block whitespace-nowrap px-3 py-2 md:table-cell md:py-3">
+        <label htmlFor="account" className="text-xs font-medium text-gray-500 md:hidden">Account</label>
+        <input
+          id="account"
+          type="text"
+          value={account}
+          onChange={(e) => setAccount(e.target.value)}
+          className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          placeholder="Account"
         />
       </td>
       {/* 3. Cost Basis Column */}
@@ -230,12 +245,23 @@ const AddPositionRow = ({ user }) => {
 
 const PositionsPage = () => {
   const { user } = useAuth();
-  const { isLoading, aggregatedPositions } = usePortfolio();
+  const {
+    isLoading,
+    aggregatedPositions,
+    refreshMarketData,
+    isSchwabConnected,
+  } = usePortfolio();
 
   const [expandedTickers, setExpandedTickers] = useState([]);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedLot, setSelectedLot] = useState(null);
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
+  
+  const handleRefresh = () => {
+    if (isSchwabConnected) {
+      refreshMarketData();
+    }
+  };
 
   const toggleTickerExpansion = (ticker) => {
     setExpandedTickers((prev) =>
@@ -297,6 +323,7 @@ const PositionsPage = () => {
         date: originalLot.date,
         exitPrice: exitPrice,
         exitDate: exitDate,
+        account: originalLot.account.toUpperCase(),
         closedAt: serverTimestamp(),
       });
       const originalLotRef = doc(db, 'users', user.uid, 'positions', originalLot.id);
@@ -461,7 +488,7 @@ const PositionsPage = () => {
                     />
                   </td>
                   <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
-                    -
+                    {lot.account}
                   </td>
                   <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
                     {formatCurrency(lot.fillPrice)}
@@ -501,6 +528,16 @@ const PositionsPage = () => {
           >
             Collapse All
           </button>
+            <button
+                onClick={handleRefresh}
+                disabled={!isSchwabConnected || isLoading}
+                className="relative inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+                <ArrowPathIcon
+                    className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`}
+                />
+                <span className="ml-2">{isLoading ? 'Refreshing...' : 'Refresh'}</span>
+            </button>
         </div>
       </div>
       
@@ -527,7 +564,7 @@ const PositionsPage = () => {
                 Gain (%)
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Strategy
+                Strategy / Account
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Avg Fill Price / Fill Price

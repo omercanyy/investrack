@@ -4,6 +4,7 @@ import React, {
   useState,
   useEffect,
   useMemo,
+  useCallback,
 } from 'react';
 import { useAuth } from './AuthContext';
 import { db } from '../firebase';
@@ -13,7 +14,11 @@ import {
   onSnapshot,
   doc,
 } from 'firebase/firestore';
-import { fetchCurrentPrices, fetchBetaValues } from '../utils/schwabApi';
+import {
+  fetchCurrentPrices,
+  fetchBetaValues,
+  fetchAvailableCash,
+} from '../utils/schwabApi';
 import { calculateAllXIRR } from '../utils/xirr';
 import { getCategoricBeta } from '../utils/betaCalculator';
 
@@ -30,6 +35,7 @@ export const PortfolioProvider = ({ children }) => {
   const [strategies, setStrategies] = useState({});
   const [priceData, setPriceData] = useState({});
   const [betas, setBetas] = useState({});
+  const [availableCash, setAvailableCash] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [realizedGain, setRealizedGain] = useState(0);
   const [xirrValues, setXirrValues] = useState({
@@ -44,6 +50,92 @@ export const PortfolioProvider = ({ children }) => {
   const [absoluteBetaCategory, setAbsoluteBetaCategory] = useState('N/A');
   const [isSchwabConnected, setIsSchwabConnected] = useState(false);
 
+  const refreshMarketData = useCallback(async () => {
+    if (!isSchwabConnected) {
+      setPriceData({});
+      setBetas({});
+      setAvailableCash(0);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const cash = await fetchAvailableCash();
+      setAvailableCash(cash);
+    } catch (error) {
+      console.error('Error fetching available cash:', error);
+      setAvailableCash(0);
+    }
+
+    if (positions.length === 0) {
+      setPriceData({});
+      setBetas({});
+      setIsLoading(false);
+      return;
+    }
+
+    const uniqueTickers = [...new Set(positions.map((p) => p.ticker))];
+    if (!uniqueTickers.includes('SPY')) uniqueTickers.push('SPY');
+    if (!uniqueTickers.includes('GLD')) uniqueTickers.push('GLD');
+
+    try {
+      const results = await Promise.allSettled([
+        fetchCurrentPrices(uniqueTickers),
+        fetchBetaValues(uniqueTickers),
+      ]);
+
+      if (results[0].status === 'fulfilled') {
+        setPriceData(results[0].value);
+      } else {
+        console.error('Error fetching prices:', results[0].reason);
+        setPriceData({});
+      }
+
+      if (results[1].status === 'fulfilled') {
+        const fetchedBetas = results[1].value;
+        const hardcodedBetas = {
+          AAOI: 3.25,
+          APLD: 7.10,
+          BE: 3.00,
+          CRDO: 2.63,
+          GLXY: 3.99,
+          GOOG: 1.07,
+          INOD: 2.39,
+          IREN: 4.24,
+          META: 1.27,
+          NOK: 0.47,
+          NVDA: 2.28,
+          OKLO: 0.75,
+          TMC: 1.83,
+          ALAB: 2.05,
+          CORZ: 2.81,
+          CRWV: 1.5,
+          FBTC: 1.9,
+          GEV: 1.4,
+          QLD: 2.34,
+          RDDT: 2.26,
+        };
+
+        const finalBetas = { ...fetchedBetas };
+        uniqueTickers.forEach(ticker => {
+          if (!finalBetas[ticker] || finalBetas[ticker] === 0) {
+            if (hardcodedBetas[ticker]) {
+              finalBetas[ticker] = hardcodedBetas[ticker];
+            }
+          }
+        });
+        setBetas(finalBetas);
+      } else {
+        console.error('Error fetching betas:', results[1].reason);
+        setBetas({});
+      }
+    } catch (error) {
+      console.error('Error refreshing market data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isSchwabConnected, positions]);
+
   useEffect(() => {
     if (!user) {
       setIsSchwabConnected(false);
@@ -55,25 +147,6 @@ export const PortfolioProvider = ({ children }) => {
     });
     return () => unsubscribe();
   }, [user]);
-
-  useEffect(() => {
-    if (!isSchwabConnected || positions.length === 0) {
-      setBetas({});
-      return;
-    }
-
-    const fetchBetas = async () => {
-      const uniqueTickers = [...new Set(positions.map((p) => p.ticker))];
-      try {
-        const newBetaData = await fetchBetaValues(uniqueTickers);
-        setBetas(newBetaData);
-      } catch (error) {
-        console.error('Error fetching beta values:', error);
-      }
-    };
-
-    fetchBetas();
-  }, [positions, isSchwabConnected]);
 
   useEffect(() => {
     if (!user) {
@@ -154,29 +227,10 @@ export const PortfolioProvider = ({ children }) => {
   }, [user]);
 
   useEffect(() => {
-    if (!positions || positions.length === 0 || !isSchwabConnected) {
-      setPriceData({});
-      return;
-    }
-
-    const uniqueTickers = [...new Set(positions.map((p) => p.ticker))];
-
-    if (!uniqueTickers.includes('SPY')) uniqueTickers.push('SPY');
-    if (!uniqueTickers.includes('GLD')) uniqueTickers.push('GLD');
-
-    const fetchAllPrices = async () => {
-      try {
-        const newPriceData = await fetchCurrentPrices(uniqueTickers);
-        setPriceData(newPriceData);
-      } catch (error) {
-        console.error('Error fetching prices:', error);
-      }
-    };
-
-    fetchAllPrices();
-    const intervalId = setInterval(fetchAllPrices, 300000);
+    refreshMarketData();
+    const intervalId = setInterval(refreshMarketData, 300000);
     return () => clearInterval(intervalId);
-  }, [positions, isSchwabConnected]);
+  }, [refreshMarketData]);
 
   const aggregatedPositions = useMemo(() => {
     const groups = {};
@@ -189,12 +243,16 @@ export const PortfolioProvider = ({ children }) => {
           totalCostBasis: 0,
           strategy: strategies[pos.ticker] || '',
           oldestEntryDate: pos.date,
+          accounts: [],
         };
       }
       const group = groups[pos.ticker];
       group.lots.push(pos);
       group.totalAmount += pos.amount;
       group.totalCostBasis += pos.amount * pos.fillPrice;
+      if (pos.account && !group.accounts.includes(pos.account)) {
+        group.accounts.push(pos.account);
+      }
       if (new Date(pos.date) < new Date(group.oldestEntryDate)) {
         group.oldestEntryDate = pos.date;
       }
@@ -238,17 +296,25 @@ export const PortfolioProvider = ({ children }) => {
   }, [aggregatedPositions]);
 
   const portfolioStats = useMemo(() => {
-    let totalValue = 0;
-    let totalCostBasis = 0;
-    aggregatedPositions.forEach((pos) => {
-      totalValue += pos.currentValue;
-      totalCostBasis += pos.totalCostBasis;
-    });
-    const totalGainLoss = totalValue - totalCostBasis;
+    const stats = aggregatedPositions.reduce(
+      (acc, pos) => {
+        acc.totalValue += pos.currentValue || 0;
+        acc.totalCostBasis += pos.totalCostBasis || 0;
+        acc.totalGainLoss += pos.gainLoss || 0;
+        return acc;
+      },
+      { totalValue: 0, totalCostBasis: 0, totalGainLoss: 0 }
+    );
+
+    stats.totalValue += availableCash;
+
     const totalGainLossPercent =
-      totalCostBasis === 0 ? 0 : totalGainLoss / totalCostBasis;
-    return { totalValue, totalCostBasis, totalGainLoss, totalGainLossPercent };
-  }, [aggregatedPositions]);
+      stats.totalCostBasis === 0
+        ? 0
+        : stats.totalGainLoss / stats.totalCostBasis;
+
+    return { ...stats, totalGainLossPercent };
+  }, [aggregatedPositions, availableCash]);
 
   useEffect(() => {
     if (
@@ -261,10 +327,16 @@ export const PortfolioProvider = ({ children }) => {
     }
 
     const runXirr = async () => {
+      const portfolioValueForXirr = portfolioStats.totalValue - availableCash;
+      console.log('Calculating XIRR with:', {
+        portfolioValueForXirr,
+        spyPrice: priceData.SPY,
+        gldPrice: priceData.GLD,
+      });
       const rates = await calculateAllXIRR(
         positions,
         closedPositions,
-        portfolioStats.totalValue,
+        portfolioValueForXirr,
         priceData.SPY,
         priceData.GLD
       );
@@ -321,6 +393,8 @@ export const PortfolioProvider = ({ children }) => {
     absoluteBetaCategory,
     betaDistribution,
     isSchwabConnected,
+    refreshMarketData,
+    availableCash,
   };
 
   return (

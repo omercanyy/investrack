@@ -10,7 +10,7 @@ import {
   setDoc,
   serverTimestamp,
 } from 'firebase/firestore';
-import { processCSVString } from '../utils/csvParser';
+import { processTSVString } from '../utils/tsvParser';
 
 const PasteModal = ({
   collectionName,
@@ -26,8 +26,8 @@ const PasteModal = ({
 
   const placeholder =
     collectionName === 'positions'
-      ? 'Date, Ticker, Fill Price, Quantity\n2025-10-30, GOOG, 150.00, 10'
-      : 'Entry Date, Ticker, Fill Price, Quantity, Exit Price, Exit Date\n2025-10-30, MSFT, 300.00, 5, 310.00, 2025-10-31';
+      ? 'Entry Date\tQuantity\tEntry\tAsset\tAccount\tStrategy\n2025-10-30\t10\t150.00\tGOOG\tROBINHOOD\tLONG'
+      : 'Entry Date\tQuantity\tEntry\tAsset\tExit Value\tExit\tExit Date\tAccount\tStrategy';
 
   return (
     <div
@@ -48,8 +48,8 @@ const PasteModal = ({
           Bulk Paste Data for {title}
         </h3>
         <p className="mt-2 text-sm text-gray-600">
-          Paste your comma-separated data below. The first row should be the
-          header (e.g., `Date, Ticker,...`).
+          Paste your tab-separated data below. The first row should be the
+          header (e.g., `Date\tTicker\t...`).
         </p>
         <textarea
           value={pasteData}
@@ -84,8 +84,8 @@ const AdminTools = ({ collectionName, title }) => {
   const [message, setMessage] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handlePasteSubmit = async (csvString) => {
-    if (!csvString || !user) {
+  const handlePasteSubmit = async (tsvString) => {
+    if (!tsvString || !user) {
       setIsModalOpen(false);
       return;
     }
@@ -94,12 +94,16 @@ const AdminTools = ({ collectionName, title }) => {
     setIsLoading(true);
     setMessage('Parsing pasted data...');
     try {
-      const dataToUpload = await processCSVString(csvString, collectionName);
+      const { positions, strategies } = await processTSVString(
+        tsvString,
+        collectionName
+      );
+      const dataToUpload = positions;
       if (dataToUpload.length === 0) {
         throw new Error('No valid data rows were found. Check your headers.');
       }
       
-      setMessage(`Uploading ${dataToUpload.length} ${title}...`);
+      setMessage(`Uploading ${dataToUpload.length} ${title} and ${strategies.length} strategies...`);
 
       const batch = writeBatch(db);
       const ref = collection(db, 'users', user.uid, collectionName);
@@ -108,8 +112,16 @@ const AdminTools = ({ collectionName, title }) => {
         batch.set(docRef, item);
       });
 
+      if (strategies.length > 0) {
+        const strategiesRef = collection(db, 'users', user.uid, 'strategies');
+        strategies.forEach((item) => {
+          const docRef = doc(strategiesRef, item.ticker);
+          batch.set(docRef, { strategy: item.strategy });
+        });
+      }
+
       await batch.commit();
-      setMessage(`Success! Uploaded ${dataToUpload.length} ${title}.`);
+      setMessage(`Success! Uploaded ${dataToUpload.length} ${title} and ${strategies.length} strategies.`);
     } catch (error) {
       console.error(`Error uploading ${collectionName}:`, error);
       setMessage(`Error: ${error.message}`);
