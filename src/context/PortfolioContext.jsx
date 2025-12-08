@@ -35,7 +35,7 @@ export const PortfolioProvider = ({ children }) => {
   const [strategies, setStrategies] = useState({});
   const [priceData, setPriceData] = useState({});
   const [betas, setBetas] = useState({});
-  const [availableCash, setAvailableCash] = useState(0);
+  const [availableCash, setAvailableCash] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [realizedGain, setRealizedGain] = useState(0);
   const [xirrValues, setXirrValues] = useState({
@@ -54,7 +54,7 @@ export const PortfolioProvider = ({ children }) => {
     if (!isSchwabConnected) {
       setPriceData({});
       setBetas({});
-      setAvailableCash(0);
+      setAvailableCash({});
       return;
     }
 
@@ -64,7 +64,7 @@ export const PortfolioProvider = ({ children }) => {
       setAvailableCash(cash);
     } catch (error) {
       console.error('Error fetching available cash:', error);
-      setAvailableCash(0);
+      setAvailableCash({});
     }
 
     if (positions.length === 0) {
@@ -306,7 +306,7 @@ export const PortfolioProvider = ({ children }) => {
       { totalValue: 0, totalCostBasis: 0, totalGainLoss: 0 }
     );
 
-    stats.totalValue += availableCash;
+        stats.totalValue += Object.values(availableCash).reduce((sum, cash) => sum + cash, 0);
 
     const totalGainLossPercent =
       stats.totalCostBasis === 0
@@ -327,7 +327,7 @@ export const PortfolioProvider = ({ children }) => {
     }
 
     const runXirr = async () => {
-      const portfolioValueForXirr = portfolioStats.totalValue - availableCash;
+      const portfolioValueForXirr = portfolioStats.totalValue - Object.values(availableCash).reduce((sum, cash) => sum + cash, 0);
       console.log('Calculating XIRR with:', {
         portfolioValueForXirr,
         spyPrice: priceData.SPY,

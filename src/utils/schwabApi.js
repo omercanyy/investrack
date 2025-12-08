@@ -94,15 +94,15 @@ export const fetchBetaValues = async (tickers) => {
 export const fetchAvailableCash = async () => {
   const endpoint = '/trader/v1/accounts';
   const response = await schwabApi(endpoint, { cache: 'no-cache' });
-  let totalCash = 0;
+  const cashByAccount = {};
   if (response && Array.isArray(response)) {
     response.forEach(account => {
-      if (account.securitiesAccount && account.securitiesAccount.currentBalances) {
-        totalCash += account.securitiesAccount.currentBalances.cashAvailableForTrading || 0;
+      if (account.securitiesAccount && account.securitiesAccount.currentBalances && account.securitiesAccount.accountNumber) {
+        cashByAccount[account.securitiesAccount.accountNumber] = account.securitiesAccount.currentBalances.cashAvailableForTrading || 0;
       }
     });
   }
-  return totalCash;
+  return cashByAccount;
 };
 
 export const fetchHistoricalPrices = async (ticker, date) => {
