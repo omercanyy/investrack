@@ -7,6 +7,8 @@ import CollapsibleCard from '../components/CollapsibleCard';
 import StrategyAllocationsTable from '../components/StrategyAllocationsTable';
 import AccountAllocationsTable from '../components/AccountAllocationsTable';
 
+import { ACCOUNT_TYPES } from '../constants/accounts';
+
 const formatCurrency = (value) => {
   if (typeof value !== 'number') {
     value = 0;
@@ -15,12 +17,6 @@ const formatCurrency = (value) => {
     style: 'currency',
     currency: 'USD',
   }).format(value);
-};
-
-const accountNames = {
-  '10822024': 'Individual',
-  '54703925': '401k Pre-tax',
-  '86998954': '401k Roth',
 };
 
 const DashboardPage = () => {
@@ -81,7 +77,7 @@ const DashboardPage = () => {
           <div className="text-xs text-gray-500 mt-1">
             {Object.entries(availableCash).map(([account, cash]) => (
               <div key={account} className="flex justify-between">
-                <span>{accountNames[account] || `Acc: ${account}`}</span>
+                <span>{ACCOUNT_TYPES[account] || `Acc: ${account}`}</span>
                 <span>{formatCurrency(cash)}</span>
               </div>
             ))}
@@ -124,7 +120,7 @@ const DashboardPage = () => {
             positions={positions}
             totalValue={portfolioStats.totalValue}
             cashByAccount={availableCash}
-            accountNames={accountNames}
+            accountNames={ACCOUNT_TYPES}
             priceData={priceData}
           />
         </CollapsibleCard>

@@ -23,6 +23,7 @@ import ClosePositionModal from '../components/ClosePositionModal';
 import { usePortfolio } from '../context/PortfolioContext';
 import { useAuth } from '../context/AuthContext';
 import AdminTools from '../components/AdminTools';
+import { ACCOUNT_TYPES } from '../constants/accounts';
 import { getBetaCategoryClasses } from '../utils/betaCalculator';
 
 
@@ -133,7 +134,7 @@ const AddPositionRow = ({ user }) => {
         amount: parseFloat(amount),
         fillPrice: parseFloat(fillPrice),
         date: date,
-        account: account.toUpperCase(),
+        account: account,
         createdAt: serverTimestamp(),
       });
       resetForm();
@@ -162,14 +163,17 @@ const AddPositionRow = ({ user }) => {
       </td>
       <td className="block whitespace-nowrap px-3 py-2 md:table-cell md:py-3">
         <label htmlFor="account" className="text-xs font-medium text-gray-500 md:hidden">Account</label>
-        <input
+        <select
           id="account"
-          type="text"
           value={account}
           onChange={(e) => setAccount(e.target.value)}
           className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          placeholder="Account"
-        />
+        >
+          <option value="">Select Account</option>
+          {Object.entries(ACCOUNT_TYPES).map(([id, name]) => (
+            <option key={id} value={id}>{name}</option>
+          ))}
+        </select>
       </td>
       {/* 3. Cost Basis Column */}
       <td className="hidden px-3 py-3 md:table-cell"></td>
@@ -323,7 +327,7 @@ const PositionsPage = () => {
         date: originalLot.date,
         exitPrice: exitPrice,
         exitDate: exitDate,
-        account: originalLot.account.toUpperCase(),
+        account: originalLot.account,
         closedAt: serverTimestamp(),
       });
       const originalLotRef = doc(db, 'users', user.uid, 'positions', originalLot.id);
@@ -488,7 +492,7 @@ const PositionsPage = () => {
                     />
                   </td>
                   <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
-                    {lot.account}
+                    {ACCOUNT_TYPES[lot.account] || lot.account}
                   </td>
                   <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
                     {formatCurrency(lot.fillPrice)}
