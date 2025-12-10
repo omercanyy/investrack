@@ -33,6 +33,7 @@ export const PortfolioProvider = ({ children }) => {
   const [positions, setPositions] = useState([]);
   const [closedPositions, setClosedPositions] = useState([]);
   const [strategies, setStrategies] = useState({});
+  const [strategyDefinitions, setStrategyDefinitions] = useState([]);
   const [priceData, setPriceData] = useState({});
   const [betas, setBetas] = useState({});
   const [availableCash, setAvailableCash] = useState({});
@@ -219,9 +220,25 @@ export const PortfolioProvider = ({ children }) => {
     const unsubscribe = onSnapshot(strategiesPath, (snapshot) => {
       const stratData = {};
       snapshot.forEach((doc) => {
-        stratData[doc.id] = doc.data().strategy;
+        stratData[doc.id] = doc.data();
       });
       setStrategies(stratData);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      setStrategyDefinitions([]);
+      return;
+    }
+    const defsDocPath = doc(db, 'users', user.uid, 'app-settings', 'strategies');
+    const unsubscribe = onSnapshot(defsDocPath, (snapshot) => {
+      if (snapshot.exists()) {
+        setStrategyDefinitions(snapshot.data().definitions || []);
+      } else {
+        setStrategyDefinitions([]);
+      }
     });
     return () => unsubscribe();
   }, [user]);
@@ -241,7 +258,7 @@ export const PortfolioProvider = ({ children }) => {
           lots: [],
           totalAmount: 0,
           totalCostBasis: 0,
-          strategy: strategies[pos.ticker] || '',
+          strategy: strategies[pos.ticker]?.strategy || '',
           oldestEntryDate: pos.date,
           accounts: [],
         };
@@ -381,6 +398,7 @@ export const PortfolioProvider = ({ children }) => {
     positions,
     closedPositions,
     strategies,
+    strategyDefinitions,
     priceData,
     aggregatedPositions,
     portfolioStats,

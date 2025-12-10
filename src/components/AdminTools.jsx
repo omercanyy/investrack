@@ -9,6 +9,8 @@ import {
 } from 'firebase/firestore';
 import { processTSVString } from '../utils/tsvParser';
 import { CloudArrowDownIcon } from './Icons';
+import Modal from './Modal';
+import StrategyManager from './StrategyManager';
 
 const PasteModal = ({
   collectionName,
@@ -28,23 +30,7 @@ const PasteModal = ({
       : 'Entry Date\tQuantity\tEntry\tAsset\tExit Value\tExit\tExit Date\tAccount\tStrategy';
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
-      onClick={onClose}
-    >
-      <div
-        className="relative w-full max-w-2xl rounded-lg bg-white p-6 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 font-bold text-gray-400 hover:text-gray-600"
-        >
-          X
-        </button>
-        <h3 className="text-lg font-medium text-gray-900">
-          Bulk Paste Data for {title}
-        </h3>
+    <Modal title={`Bulk Paste Data for ${title}`} onClose={onClose}>
         <p className="mt-2 text-sm text-gray-600">
           Paste your tab-separated data below. The first row should be the
           header (e.g., `Date\tTicker\t...`).
@@ -71,8 +57,7 @@ const PasteModal = ({
             Submit Data
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
 
@@ -87,6 +72,7 @@ const AdminTools = ({
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isStrategyModalOpen, setIsStrategyModalOpen] = useState(false);
 
   const handlePasteSubmit = async (tsvString) => {
     if (!tsvString || !user) {
@@ -190,11 +176,22 @@ const AdminTools = ({
           >
             Clear All {title}
           </button>
+          <button
+            onClick={() => setIsStrategyModalOpen(true)}
+            disabled={isLoading}
+            className="rounded-md bg-gray-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Add/Remove Strategies
+          </button>
         </div>
         {message && (
           <p className="mt-3 text-sm font-medium text-gray-700">{message}</p>
         )}
       </div>
+
+      {isStrategyModalOpen && (
+        <StrategyManager onClose={() => setIsStrategyModalOpen(false)} />
+      )}
 
       {isModalOpen && (
         <PasteModal

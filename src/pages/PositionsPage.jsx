@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { db } from '../firebase';
 import {
   collection,
@@ -55,12 +55,20 @@ const RenderGainLoss = ({ value, formatter = (val) => val }) => {
   return <span className={colorClass}>{formatter(value)}</span>;
 };
 
-const StrategySelector = ({ user, ticker, currentStrategy }) => {
+const StrategySelector = ({ user, ticker, currentStrategy, strategyDefinitions }) => {
   const [strategy, setStrategy] = useState(currentStrategy);
 
   useEffect(() => {
     setStrategy(currentStrategy);
   }, [currentStrategy]);
+
+  const allOptions = useMemo(() => {
+    const options = new Set(strategyDefinitions);
+    if (currentStrategy && !options.has(currentStrategy)) {
+      options.add(currentStrategy);
+    }
+    return Array.from(options);
+  }, [strategyDefinitions, currentStrategy]);
 
   const handleChange = async (e) => {
     const newStrategy = e.target.value;
@@ -68,7 +76,11 @@ const StrategySelector = ({ user, ticker, currentStrategy }) => {
     if (!user || !ticker) return;
     const docPath = doc(db, 'users', user.uid, 'strategies', ticker);
     try {
-      await setDoc(docPath, { strategy: newStrategy || 'Long' });
+      if (newStrategy) {
+        await setDoc(docPath, { strategy: newStrategy });
+      } else {
+        await deleteDoc(docPath);
+      }
     } catch (err) {
       console.error('Failed to save strategy: ', err);
     }
@@ -80,11 +92,10 @@ const StrategySelector = ({ user, ticker, currentStrategy }) => {
       onChange={handleChange}
       className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
     >
-      <option value="">Select...</option>
-      <option value="Long">Long</option>
-      <option value="Momentum">Momentum</option>
-      <option value="RSU">RSU</option>
-      <option value="Commodity">Commodity</option>
+      <option value="">Unassigned</option>
+      {allOptions.map((opt) => (
+        <option key={opt} value={opt}>{opt}</option>
+      ))}
     </select>
   );
 };
@@ -254,6 +265,7 @@ const PositionsPage = () => {
     aggregatedPositions,
     refreshMarketData,
     isSchwabConnected,
+    strategyDefinitions,
   } = usePortfolio();
 
   const [expandedTickers, setExpandedTickers] = useState([]);
@@ -422,6 +434,7 @@ const PositionsPage = () => {
                 user={user}
                 ticker={ticker}
                 currentStrategy={group.strategy}
+                strategyDefinitions={strategyDefinitions}
               />
             </td>
             <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
