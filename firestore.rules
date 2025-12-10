@@ -22,7 +22,7 @@ service cloud.firestore {
 
     // User credentials should ONLY be accessible by backend functions.
     // Deny all client-side access.
-    match /user_credentials/{userId} {
+    match /brokerage_integration_tokens/{userId} {
       allow read, write: if false;
     }
   }

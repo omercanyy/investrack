@@ -76,7 +76,7 @@ All user-specific data is stored in subcollections under the corresponding user'
 The following collections are stored at the root level:
 
 *   `betas/{ticker}`: A read-only cache of calculated Beta values for each ticker.
-*   `user_credentials/{userId}`: A secure, backend-only collection to store sensitive credentials like Schwab refresh tokens.
+*   `brokerage_integration_tokens/{userId}`: A secure, backend-only collection to store sensitive credentials like Schwab refresh tokens.
 
 ## Project Architecture & File Overview
 
@@ -210,7 +210,7 @@ Long-term ideas for a "v2" of the app.
 | 6.1 | "[Auth] Create a new ""Connect to Schwab"" button in the app (e.g., in Layout or a new Settings page) that redirects the user to the Schwab login & consent screen." | Done |
 | 6.2 | "[Auth] Create a new page at /auth/schwab/callback to handle the redirect from Schwab. This page will be responsible for parsing the `code` from the URL." | Done |
 | 6.3 | "[Auth] Implement the complete Schwab Authentication Service (two callable functions) to securely handle the initial code-to-token exchange AND manage continuous token renewal." | Done |
-| 6.4 | "[Auth] Securely store the encrypted `refresh_token` in a new Firestore collection (e.g., `user_credentials/{userId}`) associated with the user." | Done |
+| 6.4 | "[Auth] Securely store the encrypted `refresh_token` in a new Firestore collection (e.g., `brokerage_integration_tokens/{userId}`) associated with the user." | Done |
 | 6.5 | "[Core] Create a new `src/utils/schwabApi.js` client. This client will manage all API calls, automatically attaching the `access_token` and using the `refresh_token` to get a new `access_token` if one expires." | Done |
 | 6.6 | "[Refactor] Refactor the `PortfolioContext` to get current prices for all positions using the new `schwabApi.js` client and the `GET /marketdata/v1/quotes` endpoint." | Done |
 | 6.7 | "[Refactor] Refactor the XIRR calculation for SPY and GLD to use the `schwabApi.js` client and the `GET /marketdata/v1/pricehistory` endpoint (requesting 20 years, daily frequency)." | Done |

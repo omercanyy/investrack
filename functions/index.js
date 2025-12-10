@@ -48,7 +48,7 @@ exports.connectSchwab = onCall({ enforceAppCheck: false }, async (request) => {
     const { refresh_token } = response.data;
 
     // 3. Securely store the refresh token and set status flag
-    const userCredentialsRef = db.collection("user_credentials").doc(uid);
+    const userCredentialsRef = db.collection("brokerage_integration_tokens").doc(uid);
     const userStatusRef = db.collection("users").doc(uid).collection("status").doc("schwab");
 
     await Promise.all([
@@ -82,7 +82,7 @@ exports.refreshSchwabToken = onCall(
     const { uid } = request.auth;
 
     // 2. Retrieve the stored refresh token from Firestore
-    const userCredentialsRef = db.collection("user_credentials").doc(uid);
+    const userCredentialsRef = db.collection("brokerage_integration_tokens").doc(uid);
     const doc = await userCredentialsRef.get();
 
     if (!doc.exists) {
