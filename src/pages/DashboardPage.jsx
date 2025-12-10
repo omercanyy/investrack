@@ -119,11 +119,13 @@ const DashboardPage = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-        <CollapsibleCard title="Allocations by Ticker">
-          <AllocationsTable
-            positions={aggregatedPositions}
+        <CollapsibleCard title="Allocations by Account">
+          <AccountAllocationsTable
+            positions={positions}
             totalValue={portfolioStats.totalValue}
-            cash={totalCash}
+            cashByAccount={availableCash}
+            accountNames={accountNames}
+            priceData={priceData}
           />
         </CollapsibleCard>
         <CollapsibleCard title="Allocations by Strategy">
@@ -133,13 +135,11 @@ const DashboardPage = () => {
             cash={totalCash}
           />
         </CollapsibleCard>
-        <CollapsibleCard title="Allocations by Account">
-          <AccountAllocationsTable
-            positions={positions}
+        <CollapsibleCard title="Allocations by Ticker">
+          <AllocationsTable
+            positions={aggregatedPositions}
             totalValue={portfolioStats.totalValue}
-            cashByAccount={availableCash}
-            accountNames={accountNames}
-            priceData={priceData}
+            cash={totalCash}
           />
         </CollapsibleCard>
         <CollapsibleCard title="Risk Analysis">

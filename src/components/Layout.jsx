@@ -154,14 +154,12 @@ const TopBar = ({ user, handleLogout, setIsSidebarOpen, isSchwabConnected }) => 
             <span className="hidden text-sm font-medium text-gray-700 sm:block">
               {user.displayName}
             </span>
-            {!isSchwabConnected && (
-              <button
-                onClick={handleConnectToSchwab}
-                className="rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-              >
-                Connect to Schwab
-              </button>
-            )}
+            <button
+              onClick={handleConnectToSchwab}
+              className="rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+            >
+              Connect to Schwab
+            </button>
             <button
               onClick={handleLogout}
               className="rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
