@@ -25,7 +25,7 @@ export const AppLayout = ({
         setActivePage={setActivePage}
       />
 
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col min-w-0">
         <TopBar
           user={user}
           handleLogout={handleLogout}

@@ -110,6 +110,26 @@ export const PortfolioProvider = ({ children }) => {
     generateExportableData();
   }, [generateExportableData]);
 
+  useEffect(() => {
+    if (isSchwabConnected) {
+      const fetchHistory = async () => {
+        try {
+          const spyData = await fetchHistoricalPrices('SPY', new Date());
+          if (spyData && spyData.candles) {
+            setSpyHistory(spyData.candles);
+          }
+          const gldData = await fetchHistoricalPrices('GLD', new Date());
+          if (gldData && gldData.candles) {
+            setGldHistory(gldData.candles);
+          }
+        } catch (error) {
+          console.error('Error fetching historical prices:', error);
+        }
+      };
+      fetchHistory();
+    }
+  }, [isSchwabConnected]);
+
 
 
 
