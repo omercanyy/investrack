@@ -199,48 +199,6 @@ const DashboardPage = () => {
         </CollapsibleCard>
       </div>
       <div className="mt-6">
-        <CollapsibleCard title="Risk Analysis">
-          <div className="overflow-x-auto mt-2">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ticker
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Beta
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Risk Category
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {aggregatedPositions.map((pos) => (
-                  <tr key={pos.ticker}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {pos.ticker}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {pos.beta !== null ? pos.beta.toFixed(2) : 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          getBetaCategoryClasses(pos.betaCategory).badge
-                        }`}
-                      >
-                        {pos.betaCategory}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CollapsibleCard>
-      </div>
-      <div className="mt-6">
         <CollapsibleCard title="Closed Positions">
           <ClosedPositionsPage />
         </CollapsibleCard>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { getBetaCategoryClasses } from '../utils/betaCalculator';
 
 const formatCurrency = (value) => {
   if (typeof value !== 'number') {
@@ -22,7 +23,7 @@ const RenderGainLoss = ({ value, formatter = (val) => val }) => {
   return <span className={colorClass}>{formatter(value)}</span>;
 };
 
-const AllocationsTable = ({ positions, totalValue, cash }) => {
+const AllocationsTable = ({ positions, totalValue }) => {
   const sortedPositions = [...positions].sort((a, b) => b.currentValue - a.currentValue);
 
   return (
@@ -50,6 +51,9 @@ const AllocationsTable = ({ positions, totalValue, cash }) => {
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Cost Basis
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Risk Category
             </th>
           </tr>
         </thead>
@@ -79,6 +83,15 @@ const AllocationsTable = ({ positions, totalValue, cash }) => {
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {formatCurrency(pos.totalCostBasis)}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <span
+                  className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                    getBetaCategoryClasses(pos.betaCategory).badge
+                  }`}
+                >
+                  {pos.betaCategory}
+                </span>
               </td>
             </tr>
           ))}
