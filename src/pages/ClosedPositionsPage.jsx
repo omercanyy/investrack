@@ -1,6 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { usePortfolio } from '../context/PortfolioContext';
 import AdminTools from '../components/AdminTools';
+import { TrashIcon } from '../components/Icons';
+import ConfirmModal from '../components/ConfirmModal';
+import { useAuth } from '../context/AuthContext';
+import { db } from '../firebase';
+import { doc, deleteDoc } from 'firebase/firestore';
 
 const formatCurrency = (value) => {
   if (typeof value !== 'number') {
@@ -32,7 +37,10 @@ const RenderGainLoss = ({ value, formatter = (val) => val }) => {
 
 
 const ClosedPositionsPage = () => {
+  const { user } = useAuth();
   const { isLoading, closedPositions } = usePortfolio();
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedPosition, setSelectedPosition] = useState(null);
 
   const processedPositions = useMemo(() => {
     return closedPositions
@@ -51,6 +59,28 @@ const ClosedPositionsPage = () => {
       })
       .sort((a, b) => new Date(b.exitDate) - new Date(a.exitDate));
   }, [closedPositions]);
+
+  const handleDeleteClick = (pos) => {
+    setSelectedPosition(pos);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleCloseDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setSelectedPosition(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedPosition || !user) return;
+    try {
+      const docPath = doc(db, 'users', user.uid, 'closed_positions', selectedPosition.id);
+      await deleteDoc(docPath);
+    } catch (error) {
+      console.error('Error deleting document: ', error);
+    } finally {
+      handleCloseDeleteModal();
+    }
+  };
 
   if (isLoading && processedPositions.length === 0) {
     return (
@@ -105,12 +135,15 @@ const ClosedPositionsPage = () => {
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Gain (%)
               </th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Actions
+              </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
+          <tbody className="bg-white divide-y divide-gray-200">
             {processedPositions.length === 0 ? (
               <tr>
-                <td colSpan="11" className="px-4 py-4 text-center text-gray-500">
+                <td colSpan="12" className="px-4 py-4 text-center text-gray-500">
                   No closed positions yet.
                 </td>
               </tr>
@@ -156,12 +189,28 @@ const ClosedPositionsPage = () => {
                       formatter={formatPercentage}
                     />
                   </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm">
+                    <button
+                      onClick={() => handleDeleteClick(pos)}
+                      title="Delete Closed Position"
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <TrashIcon />
+                    </button>
+                  </td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
       </div>
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        title="Delete Closed Position"
+        message="Are you sure you want to delete this closed position? This action cannot be undone."
+      />
     </div>
   );
 };

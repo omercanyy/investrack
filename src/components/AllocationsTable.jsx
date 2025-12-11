@@ -42,6 +42,15 @@ const AllocationsTable = ({ positions, totalValue, cash }) => {
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Gain
             </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Quantity
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Ave Price
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Cost Basis
+            </th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
@@ -62,6 +71,15 @@ const AllocationsTable = ({ positions, totalValue, cash }) => {
                   formatter={() => formatGain(pos.gainLoss, pos.gainLossPercent)}
                 />
               </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {pos.totalAmount}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {formatCurrency(pos.weightedAvgFillPrice)}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {formatCurrency(pos.totalCostBasis)}
+              </td>
             </tr>
           ))}
           <tr>
@@ -74,7 +92,7 @@ const AllocationsTable = ({ positions, totalValue, cash }) => {
             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
               {((cash / totalValue) * 100).toFixed(2)}%
             </td>
-            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
+            <td colSpan="4" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
           </tr>
         </tbody>
       </table>

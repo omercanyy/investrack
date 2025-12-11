@@ -157,7 +157,7 @@ const DashboardPage = () => {
       </div>
 
       <div className="mt-6">
-        <CollapsibleCard title="Current Positions" startOpen={false}>
+        <CollapsibleCard title="Current Lots" startOpen={false}>
           <PositionsPage />
         </CollapsibleCard>
       </div>

@@ -216,11 +216,9 @@ const AddPositionRow = ({ user }) => {
           placeholder="Ticker"
         />
       </td>
-      {/* 3. Gain ($) Column */}
+      {/* 3. Gain Column */}
       <td className="px-3 py-3"></td>
-      {/* 4. Gain (%) Column */}
-      <td className="px-3 py-3"></td>
-      {/* 5. Amount Column */}
+      {/* 4. Amount Column */}
       <td className="whitespace-nowrap px-3 py-2">
         <input
           id="amount"
@@ -294,14 +292,16 @@ const PositionsPage = () => {
   const { user } = useAuth();
   const {
     isLoading,
-    aggregatedPositions,
+    positions, // Use raw positions for lot-level view
+    priceData,
     refreshMarketData,
     isSchwabConnected,
+    strategies, // Get strategies
     strategyDefinitions,
+    industries, // Get industries
     industryDefinitions,
   } = usePortfolio();
 
-  const [expandedTickers, setExpandedTickers] = useState([]);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedLot, setSelectedLot] = useState(null);
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
@@ -310,22 +310,6 @@ const PositionsPage = () => {
     if (isSchwabConnected) {
       refreshMarketData();
     }
-  };
-
-  const toggleTickerExpansion = (ticker) => {
-    setExpandedTickers((prev) =>
-      prev.includes(ticker)
-        ? prev.filter((t) => t !== ticker)
-        : [...prev, ticker]
-    );
-  };
-
-  const expandAll = () => {
-    setExpandedTickers(aggregatedPositions.map((p) => p.ticker));
-  };
-
-  const collapseAll = () => {
-    setExpandedTickers([]);
   };
 
   const handleDeleteClick = (lot) => {
@@ -395,16 +379,16 @@ const PositionsPage = () => {
     return (
       <div className="rounded-lg bg-white p-6 text-center shadow">
         <h2 className="text-xl font-semibold text-gray-700">
-          Please log in to see your positions.
+          Please log in to see your lots.
         </h2>
       </div>
     );
   }
 
-  if (isLoading && aggregatedPositions.length === 0) {
+  if (isLoading && positions.length === 0) {
     return (
       <div>
-        <AdminTools collectionName="positions" title="Positions" />
+        <AdminTools collectionName="positions" title="Current Lots" />
         <div className="rounded-lg bg-white p-6 text-center shadow">
           <h2 className="text-xl font-semibold text-gray-700">Loading...</h2>
         </div>
@@ -413,185 +397,126 @@ const PositionsPage = () => {
   }
 
   const renderTableBody = () => {
-    if (aggregatedPositions.length === 0) {
+    if (positions.length === 0) {
       return (
         <tr>
           <td colSpan="11" className="px-4 py-4 text-center text-gray-500">
-            No positions added yet. Use the row below to add one.
+            No lots added yet. Use the row below to add one.
           </td>
         </tr>
       );
     }
 
-    return aggregatedPositions.map((group) => {
-      const ticker = group.ticker;
-      const isExpanded = expandedTickers.includes(ticker);
-      const currentPrice = group.currentValue / group.totalAmount || 0;
+    const sortedPositions = [...positions].sort((a, b) => a.ticker.localeCompare(b.ticker));
+
+    return sortedPositions.map((lot) => {
+      const currentPrice = priceData[lot.ticker] || 0;
+      const lotCostBasis = lot.amount * lot.fillPrice;
+      const lotCurrentValue = lot.amount * currentPrice;
+      const lotGainLoss = lotCurrentValue - lotCostBasis;
+      const lotGainLossPercent =
+        lotCostBasis === 0 ? 0 : lotGainLoss / lotCostBasis;
+
+      const strategy = strategies[lot.ticker]?.strategy || '';
+      const industry = industries[lot.ticker]?.industry || '';
 
       return (
-        <React.Fragment key={ticker}>
-          {/* Aggregated Row */}
-          <tr className="bg-white hover:bg-gray-50">
-            <td className="whitespace-nowrap px-4 py-3">
-              <button
-                onClick={() => toggleTickerExpansion(ticker)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                {isExpanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
-              </button>
-            </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
-              {ticker}
-            </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm">
-              <RenderGainLoss
-                value={group.gainLoss}
-                formatter={formatCurrency}
-              />
-            </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm">
-              <RenderGainLoss
-                value={group.gainLossPercent}
-                formatter={formatPercentage}
-              />
-            </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
-              {group.totalAmount}
-            </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
-              {formatCurrency(currentPrice)}
-            </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
-              {formatCurrency(group.currentValue)}
-            </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
-              {formatCurrency(group.totalCostBasis)}
-            </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
-              <StrategySelector
+        <tr key={lot.id} className="bg-white hover:bg-gray-50">
+          <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
+            {lot.ticker}
+          </td>
+          <td className="whitespace-nowrap px-4 py-3 text-sm">
+            <RenderGainLoss
+              value={lotGainLoss}
+              formatter={(value) => 
+                `${formatCurrency(value)} (${formatPercentage(lotGainLossPercent)})`
+              }
+            />
+          </td>
+          <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+            {lot.amount}
+          </td>
+          <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+            {formatCurrency(lot.fillPrice)}
+          </td>
+          <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
+            {formatCurrency(lotCurrentValue)}
+          </td>
+          <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+            {formatCurrency(lotCostBasis)}
+          </td>
+          <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+            <StrategySelector
+              user={user}
+              ticker={lot.ticker}
+              currentStrategy={strategy}
+              strategyDefinitions={strategyDefinitions}
+            />
+          </td>
+          <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+            {ACCOUNT_TYPES[lot.account] || lot.account}
+          </td>
+          <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+            <IndustrySelector
                 user={user}
-                ticker={ticker}
-                currentStrategy={group.strategy}
-                strategyDefinitions={strategyDefinitions}
-              />
-            </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
-              <IndustrySelector
-                user={user}
-                ticker={ticker}
-                currentIndustry={group.industry}
+                ticker={lot.ticker}
+                currentIndustry={industry}
                 industryDefinitions={industryDefinitions}
               />
-            </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
-              {group.oldestEntryDate}
-            </td>
-          </tr>
-
-          {/* Expanded Lot Rows */}
-          {isExpanded &&
-            group.lots.map((lot) => {
-              const lotCostBasis = lot.amount * lot.fillPrice;
-              const lotCurrentValue = lot.amount * currentPrice;
-              const lotGainLoss = lotCurrentValue - lotCostBasis;
-              const lotGainLossPercent =
-                lotCostBasis === 0 ? 0 : lotGainLoss / lotCostBasis;
-
-              return (
-                <tr key={lot.id} className="bg-gray-50">
-                  <td className="whitespace-nowrap px-4 py-2 text-center"></td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs font-medium text-gray-700">
-                    <div className="flex justify-center space-x-2">
-                      <button
-                        onClick={() => handleClosePositionClick(lot)}
-                        title="Sell/Close Position"
-                        className="text-green-600 hover:text-green-800"
-                      >
-                        <BanknotesIcon />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(lot)}
-                        title="Delete Lot"
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <TrashIcon />
-                      </button>
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs">
-                    <RenderGainLoss
-                      value={lotGainLoss}
-                      formatter={formatCurrency}
-                    />
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs">
-                    <RenderGainLoss
-                      value={lotGainLossPercent}
-                      formatter={formatPercentage}
-                    />
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
-                    {lot.amount}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
-                    {formatCurrency(lot.fillPrice)}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
-                    {formatCurrency(lotCurrentValue)}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
-                    {formatCurrency(lotCostBasis)}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
-                    {ACCOUNT_TYPES[lot.account] || lot.account}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
-                    {group.industry}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
-                    {lot.date}
-                  </td>
-                </tr>
-              );
-            })}
-        </React.Fragment>
+          </td>
+          <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+            {lot.date}
+          </td>
+          <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
+            <div className="flex items-center">
+              <div className="mr-2">
+                <button
+                  onClick={() => handleClosePositionClick(lot)}
+                  title="Sell/Close Position"
+                  className="text-green-600 hover:text-green-800"
+                >
+                  <BanknotesIcon />
+                </button>
+                <button
+                  onClick={() => handleDeleteClick(lot)}
+                  title="Delete Lot"
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <TrashIcon />
+                </button>
+              </div>
+            </div>
+          </td>
+        </tr>
       );
     });
   };
 
   return (
     <div>
-
-      
       <AdminTools
         collectionName="positions"
-        title="Positions"
+        title="Current Lots"
         onRefresh={handleRefresh}
         isRefreshing={isLoading}
         isSchwabConnected={isSchwabConnected}
-        onExpandAll={expandAll}
-        onCollapseAll={collapseAll}
       />
 
       <div className="overflow-x-auto rounded-lg bg-white shadow">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="w-12 px-4 py-3"></th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Ticker
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Gain ($)
+                Gain
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Gain (%)
+                Quantity
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Amount
-              </th>
-              <th style={{whiteSpace: 'pre-wrap'}} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                {'Current/Fill\nPrice'}
+                Fill Price
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Current Value
@@ -599,20 +524,26 @@ const PositionsPage = () => {
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Cost Basis
               </th>
-              <th style={{whiteSpace: 'pre-wrap'}} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                {'Strategy/\nAccount'}
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Strategy
+              </th>
+               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Account
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Industry
               </th>
-              <th style={{whiteSpace: 'pre-wrap'}} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                {'First/\nEntry'}
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Entry Date
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Actions
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
             {renderTableBody()}
-            <AddPositionRow user={user} />
+            {/* <AddPositionRow user={user} /> */}
           </tbody>
         </table>
       </div>
@@ -621,8 +552,8 @@ const PositionsPage = () => {
         isOpen={isDeleteModalOpen}
         onClose={handleCloseDeleteModal}
         onConfirm={handleConfirmDelete}
-        title="Delete Position"
-        message="Are you sure you want to delete this position lot? This action cannot be undone."
+        title="Delete Lot"
+        message="Are you sure you want to delete this lot? This action cannot be undone."
       />
       
       <ClosePositionModal
