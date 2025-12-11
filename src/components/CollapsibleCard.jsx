@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
-const CollapsibleCard = ({ title, children }) => {
-  const [isOpen, setIsOpen] = useState(true);
+const CollapsibleCard = ({ title, children, startOpen = true }) => {
+  const [isOpen, setIsOpen] = useState(startOpen);
 
   return (
     <div className="rounded-lg bg-white p-6 shadow">
