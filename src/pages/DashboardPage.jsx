@@ -41,9 +41,12 @@ const DashboardPage = () => {
     availableCash,
     priceData,
     matchedTradeStats,
+    strategies,
+    industries,
     strategyIndustryMatrix,
     strategyDefinitions,
     industryDefinitions,
+    closedPositions,
   } = usePortfolio();
 
   const totalCash = Object.values(availableCash).reduce((sum, cash) => sum + cash, 0);
@@ -166,8 +169,17 @@ const DashboardPage = () => {
       </div>
 
       <div className="mt-6">
-        <CollapsibleCard title="Industry vs Strategy Performance" startOpen={false}>
-          <StrategyIndustryMatrix matrix={strategyIndustryMatrix} strategies={strategyDefinitions} industries={industryDefinitions} />
+        <CollapsibleCard title="Industry vs Strategy Performance" startOpen={true}>
+          <StrategyIndustryMatrix
+            matrix={strategyIndustryMatrix}
+            strategies={strategyDefinitions}
+            industries={industryDefinitions}
+            positions={positions}
+            closedPositions={closedPositions}
+            strategiesData={strategies}
+            industriesData={industries}
+            priceData={priceData}
+          />
         </CollapsibleCard>
       </div>
 

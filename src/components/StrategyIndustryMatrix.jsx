@@ -1,4 +1,5 @@
 import React from 'react';
+import PortfolioHeatmaps from './PortfolioHeatmaps';
 
 const formatPercentage = (value) => {
   if (typeof value !== 'number' || value === 0) {
@@ -21,7 +22,7 @@ const RenderGainLoss = ({ value }) => {
   return <span className={colorClass}>{formatPercentage(value)}</span>;
 };
 
-const StrategyIndustryMatrix = ({ matrix, strategies, industries }) => {
+const StrategyIndustryMatrix = ({ matrix, strategies, industries, positions, closedPositions, strategiesData, industriesData, priceData }) => {
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-gray-200">
@@ -52,9 +53,15 @@ const StrategyIndustryMatrix = ({ matrix, strategies, industries }) => {
           ))}
         </tbody>
       </table>
+      <PortfolioHeatmaps 
+        positions={positions} 
+        closedPositions={closedPositions}
+        strategies={strategiesData}
+        industries={industriesData}
+        priceData={priceData}
+      />
     </div>
   );
 };
 
 export default StrategyIndustryMatrix;
-
