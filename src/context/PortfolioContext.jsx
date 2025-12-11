@@ -39,7 +39,8 @@ export const PortfolioProvider = ({ children }) => {
   const [priceData, setPriceData] = useState({});
   const [betas, setBetas] = useState({});
   const [availableCash, setAvailableCash] = useState({});
-  const [isLoading, setIsLoading] = useState(true);
+  const [isPositionsLoading, setIsPositionsLoading] = useState(true);
+  const [isMarketDataLoading, setIsMarketDataLoading] = useState(true);
   const [realizedGain, setRealizedGain] = useState(0);
   const [xirrValues, setXirrValues] = useState({
     portfolio: 0,
@@ -58,10 +59,11 @@ export const PortfolioProvider = ({ children }) => {
       setPriceData({});
       setBetas({});
       setAvailableCash({});
+      setIsMarketDataLoading(false);
       return;
     }
 
-    setIsLoading(true);
+    setIsMarketDataLoading(true);
     try {
       const cash = await fetchAvailableCash();
       setAvailableCash(cash);
@@ -73,7 +75,7 @@ export const PortfolioProvider = ({ children }) => {
     if (positions.length === 0) {
       setPriceData({});
       setBetas({});
-      setIsLoading(false);
+      setIsMarketDataLoading(false);
       return;
     }
 
@@ -135,7 +137,7 @@ export const PortfolioProvider = ({ children }) => {
     } catch (error) {
       console.error('Error refreshing market data:', error);
     } finally {
-      setIsLoading(false);
+      setIsMarketDataLoading(false);
     }
   }, [isSchwabConnected, positions]);
 
@@ -154,10 +156,10 @@ export const PortfolioProvider = ({ children }) => {
   useEffect(() => {
     if (!user) {
       setPositions([]);
-      setIsLoading(false);
+      setIsPositionsLoading(false);
       return;
     }
-    setIsLoading(true);
+    setIsPositionsLoading(true);
     const positionsCollectionPath = collection(
       db,
       'users',
@@ -173,11 +175,11 @@ export const PortfolioProvider = ({ children }) => {
           positionsData.push({ id: doc.id, ...doc.data() });
         });
         setPositions(positionsData);
-        setIsLoading(false);
+        setIsPositionsLoading(false);
       },
       (error) => {
         console.error('Error fetching positions:', error);
-        setIsLoading(false);
+        setIsPositionsLoading(false);
       }
     );
     return () => unsubscribe();
@@ -441,7 +443,7 @@ export const PortfolioProvider = ({ children }) => {
     portfolioStats,
     xirrValues,
     realizedGain,
-    isLoading,
+    isLoading: isPositionsLoading || isMarketDataLoading,
     weightedBeta,
     weightedAbsoluteBeta,
     betaCategory,
