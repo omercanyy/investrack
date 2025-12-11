@@ -5,6 +5,7 @@ import DashboardPage from './pages/DashboardPage';
 import PositionsPage from './pages/PositionsPage';
 import ClosedPositionsPage from './pages/ClosedPositionsPage';
 import SchwabCallbackPage from './pages/SchwabCallbackPage';
+import ExportPage from './pages/ExportPage';
 
 import { usePortfolio } from './context/PortfolioContext';
 
@@ -26,6 +27,8 @@ function App() {
         return <PositionsPage />;
       case 'closed':
         return <ClosedPositionsPage />;
+      case 'export':
+        return <ExportPage />;
       default:
         return <DashboardPage />;
     }

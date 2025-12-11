@@ -91,6 +91,13 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen, activePage, setActivePage })
             isActive={activePage === 'closed'}
             onClick={() => handleLinkClick('closed')}
           />
+          <SidebarLink
+            icon={<PositionsIcon />}
+            name="Export"
+            href="export"
+            isActive={activePage === 'export'}
+            onClick={() => handleLinkClick('export')}
+          />
         </nav>
       </div>
     </>

@@ -64,30 +64,53 @@ export const PortfolioProvider = ({ children }) => {
   const [spyHistory, setSpyHistory] = useState([]);
   const [gldHistory, setGldHistory] = useState([]);
   const [strategyIndustryMatrix, setStrategyIndustryMatrix] = useState({});
+  const [exportableData, setExportableData] = useState([]);
 
-  useEffect(() => {
-    const fetchBenchmarkHistories = async () => {
-      if (isSchwabConnected) {
-        try {
-          const today = new Date().toISOString().split('T')[0];
-          const [spy, gld] = await Promise.all([
-            fetchHistoricalPrices('SPY', today),
-            fetchHistoricalPrices('GLD', today),
-          ]);
-
-          setSpyHistory((spy && spy.candles) || []);
-          setGldHistory((gld && gld.candles) || []);
-        } catch (error) {
-          console.error('Error fetching benchmark histories:', error);
-          setSpyHistory([]);
-          setGldHistory([]);
+  const generateExportableData = useCallback(() => {
+    const findPriceInHistory = (date) => {
+      if (!spyHistory || spyHistory.length === 0) return null;
+      
+      const targetTime = new Date(date).setHours(0, 0, 0, 0);
+  
+      let closestCandle = null;
+      for (const candle of spyHistory) {
+        const candleTime = new Date(candle.datetime).setHours(0, 0, 0, 0);
+        if (candleTime <= targetTime) {
+          closestCandle = candle;
+        } else {
+          break;
         }
       }
+      return closestCandle ? closestCandle.close : null;
     };
 
-    fetchBenchmarkHistories();
-  }, [isSchwabConnected]);
-  
+    const allPositions = [
+      ...positions.map(p => ({ ...p, isOpen: true })),
+      ...closedPositions.map(p => ({ ...p, isOpen: false })),
+    ];
+
+    const data = allPositions.map(pos => {
+      const entryDate = pos.date;
+      const exitDate = pos.isOpen ? new Date().toISOString().slice(0, 10) : pos.exitDate;
+      const spyOnEntry = findPriceInHistory(entryDate);
+      const spyOnExit = findPriceInHistory(exitDate);
+      const exitPrice = pos.isOpen ? priceData[pos.ticker] || 0 : pos.exitPrice;
+
+      return {
+        ...pos,
+        exitPrice,
+        exitDate,
+        spyOnEntry,
+        spyOnExit,
+      };
+    });
+    setExportableData(data);
+  }, [positions, closedPositions, spyHistory, priceData]);
+
+  useEffect(() => {
+    generateExportableData();
+  }, [generateExportableData]);
+
   useMemo(() => {
     const matrix = {};
 
@@ -624,6 +647,8 @@ export const PortfolioProvider = ({ children }) => {
     spyHistory,
     gldHistory,
     strategyIndustryMatrix,
+    exportableData,
+    generateExportableData,
   };
 
   return (
