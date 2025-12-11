@@ -63,6 +63,7 @@ export const PortfolioProvider = ({ children }) => {
   });
   const [spyHistory, setSpyHistory] = useState([]);
   const [gldHistory, setGldHistory] = useState([]);
+  const [strategyIndustryMatrix, setStrategyIndustryMatrix] = useState({});
 
   useEffect(() => {
     const fetchBenchmarkHistories = async () => {
@@ -86,6 +87,58 @@ export const PortfolioProvider = ({ children }) => {
 
     fetchBenchmarkHistories();
   }, [isSchwabConnected]);
+  
+  useMemo(() => {
+    const matrix = {};
+
+    const allPositions = [
+      ...positions.map(p => ({ ...p, isOpen: true })),
+      ...closedPositions.map(p => ({ ...p, isOpen: false })),
+    ];
+
+    allPositions.forEach(pos => {
+      const industry = industries[pos.ticker]?.industry;
+      const strategy = strategies[pos.ticker]?.strategy;
+      
+      if (!industry || !strategy || industry === 'Unassigned' || strategy === 'Unassigned') {
+        return;
+      }
+      
+      if (!matrix[strategy]) {
+        matrix[strategy] = {};
+      }
+      if (!matrix[strategy][industry]) {
+        matrix[strategy][industry] = { cost: 0, value: 0 };
+      }
+
+      const costBasis = pos.fillPrice * pos.amount;
+      let currentValue;
+
+      if (pos.isOpen) {
+        currentValue = (priceData[pos.ticker] || 0) * pos.amount;
+      } else {
+        currentValue = pos.exitPrice * pos.amount;
+      }
+      
+      matrix[strategy][industry].cost += costBasis;
+      matrix[strategy][industry].value += currentValue;
+    });
+
+    // Calculate percentages
+    Object.keys(matrix).forEach(strategy => {
+      Object.keys(matrix[strategy]).forEach(industry => {
+        const pair = matrix[strategy][industry];
+        if (pair.cost > 0) {
+          matrix[strategy][industry] = (pair.value - pair.cost) / pair.cost;
+        } else {
+          matrix[strategy][industry] = 0;
+        }
+      });
+    });
+
+    setStrategyIndustryMatrix(matrix);
+  }, [positions, closedPositions, strategies, industries, priceData]);
+
 
 
   const refreshMarketData = useCallback(async () => {
@@ -570,6 +623,7 @@ export const PortfolioProvider = ({ children }) => {
     matchedTradeStats,
     spyHistory,
     gldHistory,
+    strategyIndustryMatrix,
   };
 
   return (

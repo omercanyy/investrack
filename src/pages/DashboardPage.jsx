@@ -9,6 +9,7 @@ import AccountAllocationsTable from '../components/AccountAllocationsTable';
 import IndustryAllocationsTable from '../components/IndustryAllocationsTable';
 import PositionsPage from './PositionsPage';
 import ClosedPositionsPage from './ClosedPositionsPage';
+import StrategyIndustryMatrix from '../components/StrategyIndustryMatrix';
 
 
 import { ACCOUNT_TYPES } from '../constants/accounts';
@@ -40,6 +41,9 @@ const DashboardPage = () => {
     availableCash,
     priceData,
     matchedTradeStats,
+    strategyIndustryMatrix,
+    strategyDefinitions,
+    industryDefinitions,
   } = usePortfolio();
 
   const totalCash = Object.values(availableCash).reduce((sum, cash) => sum + cash, 0);
@@ -162,13 +166,19 @@ const DashboardPage = () => {
       </div>
 
       <div className="mt-6">
+        <CollapsibleCard title="Industry vs Strategy Performance" startOpen={false}>
+          <StrategyIndustryMatrix matrix={strategyIndustryMatrix} strategies={strategyDefinitions} industries={industryDefinitions} />
+        </CollapsibleCard>
+      </div>
+
+      <div className="mt-6">
         <CollapsibleCard title="Current Lots" startOpen={false}>
           <PositionsPage />
         </CollapsibleCard>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-        <CollapsibleCard title="Allocations by Account">
+        <CollapsibleCard title="Current Allocations by Account">
           <AccountAllocationsTable
             positions={positions}
             totalValue={portfolioStats.totalValue - totalCash}
@@ -177,13 +187,13 @@ const DashboardPage = () => {
             priceData={priceData}
           />
         </CollapsibleCard>
-        <CollapsibleCard title="Allocations by Strategy">
+        <CollapsibleCard title="Current Allocations by Strategy">
           <StrategyAllocationsTable
             positions={aggregatedPositions}
             totalValue={portfolioStats.totalValue - totalCash}
           />
         </CollapsibleCard>
-        <CollapsibleCard title="Allocations by Industry">
+        <CollapsibleCard title="Current Allocations by Industry">
           <IndustryAllocationsTable
             positions={aggregatedPositions}
             totalValue={portfolioStats.totalValue - totalCash}
@@ -191,7 +201,7 @@ const DashboardPage = () => {
         </CollapsibleCard>
       </div>
       <div className="mt-6">
-        <CollapsibleCard title="Allocations by Ticker">
+        <CollapsibleCard title="Current Allocations by Ticker">
           <AllocationsTable
             positions={aggregatedPositions}
             totalValue={portfolioStats.totalValue - totalCash}
