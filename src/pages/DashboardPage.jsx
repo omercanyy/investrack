@@ -171,7 +171,7 @@ const DashboardPage = () => {
         <CollapsibleCard title="Allocations by Account">
           <AccountAllocationsTable
             positions={positions}
-            totalValue={portfolioStats.totalValue}
+            totalValue={portfolioStats.totalValue - totalCash}
             cashByAccount={availableCash}
             accountNames={ACCOUNT_TYPES}
             priceData={priceData}
@@ -180,15 +180,13 @@ const DashboardPage = () => {
         <CollapsibleCard title="Allocations by Strategy">
           <StrategyAllocationsTable
             positions={aggregatedPositions}
-            totalValue={portfolioStats.totalValue}
-            cash={totalCash}
+            totalValue={portfolioStats.totalValue - totalCash}
           />
         </CollapsibleCard>
         <CollapsibleCard title="Allocations by Industry">
           <IndustryAllocationsTable
             positions={aggregatedPositions}
-            totalValue={portfolioStats.totalValue}
-            cash={totalCash}
+            totalValue={portfolioStats.totalValue - totalCash}
           />
         </CollapsibleCard>
       </div>
@@ -196,8 +194,7 @@ const DashboardPage = () => {
         <CollapsibleCard title="Allocations by Ticker">
           <AllocationsTable
             positions={aggregatedPositions}
-            totalValue={portfolioStats.totalValue}
-            cash={totalCash}
+            totalValue={portfolioStats.totalValue - totalCash}
           />
         </CollapsibleCard>
       </div>

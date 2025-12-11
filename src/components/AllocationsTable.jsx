@@ -82,18 +82,6 @@ const AllocationsTable = ({ positions, totalValue, cash }) => {
               </td>
             </tr>
           ))}
-          <tr>
-            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-              CASH
-            </td>
-            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {formatCurrency(cash)}
-            </td>
-            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {((cash / totalValue) * 100).toFixed(2)}%
-            </td>
-            <td colSpan="4" className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
-          </tr>
         </tbody>
       </table>
     </div>

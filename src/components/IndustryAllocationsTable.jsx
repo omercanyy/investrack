@@ -44,8 +44,6 @@ const IndustryAllocationsTable = ({ positions, totalValue, cash }) => {
     };
   });
 
-  tableData.push({ industry: 'Cash', value: cash, gain: 0, gainPercent: 0 });
-
   tableData.sort((a, b) => b.value - a.value);
 
   return (
@@ -80,12 +78,10 @@ const IndustryAllocationsTable = ({ positions, totalValue, cash }) => {
                 {((value / totalValue) * 100).toFixed(2)}%
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {industry === 'Cash' ? '-' : (
-                  <RenderGainLoss
-                    value={gain}
-                    formatter={() => formatGain(gain, gainPercent)}
-                  />
-                )}
+                <RenderGainLoss
+                  value={gain}
+                  formatter={() => formatGain(gain, gainPercent)}
+                />
               </td>
             </tr>
           ))}

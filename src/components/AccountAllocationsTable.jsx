@@ -58,15 +58,6 @@ const AccountAllocationsTable = ({
     return acc;
   }, {});
 
-  // Add cash to each account's total
-  Object.entries(cashByAccount).forEach(([account, cash]) => {
-    if (!byAccount[account]) {
-      byAccount[account] = { value: 0, cost: 0 };
-    }
-    byAccount[account].value += cash;
-    byAccount[account].cost += cash;
-  });
-
   const tableData = Object.entries(byAccount).map(([account, data]) => {
     const gain = data.value - data.cost;
     const gainPercent = data.cost === 0 ? 0 : gain / data.cost;
