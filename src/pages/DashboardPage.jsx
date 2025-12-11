@@ -70,6 +70,11 @@ const DashboardPage = () => {
 
   const xirrColor = getXirrColor(xirrValues.portfolio, xirrValues.spy, xirrValues.gld);
 
+  const getAccountAbbreviation = (accountName) => {
+    if (!accountName) return '';
+    return accountName.split(' ').map(word => word.charAt(0)).join('').replace('k','');
+  }
+
   return (
     <div>
       <h1 className="mb-4 text-3xl font-bold text-gray-900">Dashboard</h1>
@@ -108,21 +113,12 @@ const DashboardPage = () => {
           primaryValue={formatCurrency(totalCash)}
         >
           <div className="text-xs text-gray-500 mt-1">
-            {Object.entries(availableCash).map(([account, cash]) => (
-              <div key={account} className="flex justify-between">
-                <span>{ACCOUNT_TYPES[account] || `Acc: ${account}`}</span>
-                <span>{formatCurrency(cash)}</span>
-              </div>
+            {Object.entries(availableCash).map(([account, cash], index) => (
+              <span key={account}>
+                {getAccountAbbreviation(ACCOUNT_TYPES[account] || `Acc: ${account}`)}: {formatCurrency(cash)}
+                {index < Object.keys(availableCash).length - 1 && ' | '}
+              </span>
             ))}
-          </div>
-        </StatCard>
-        <StatCard
-          title="Portfolio XIRR (annualized)"
-          primaryValue={`${(xirrValues.portfolio * 100).toFixed(2)}%`}
-          primaryValueColor={xirrColor}
-        >
-          <div className="text-xs text-gray-500 mt-1">
-            <p>S&P 500: {(xirrValues.spy * 100).toFixed(2)}% | Gold: {(xirrValues.gld * 100).toFixed(2)}%</p>
           </div>
         </StatCard>
         <StatCard
@@ -143,6 +139,15 @@ const DashboardPage = () => {
             <div
               className={`w-3 h-3 rounded-full ${getBetaCategoryClasses(absoluteBetaCategory).badge}`}
             ></div>
+          </div>
+        </StatCard>
+        <StatCard
+          title="Portfolio XIRR (annualized)"
+          primaryValue={`${(xirrValues.portfolio * 100).toFixed(2)}%`}
+          primaryValueColor={xirrColor}
+        >
+          <div className="text-xs text-gray-500 mt-1">
+            <p>S&P 500: {(xirrValues.spy * 100).toFixed(2)}% | Gold: {(xirrValues.gld * 100).toFixed(2)}%</p>
           </div>
         </StatCard>
         <StatCard
