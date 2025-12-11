@@ -502,23 +502,7 @@ const PositionsPage = () => {
 
   return (
     <div>
-      <div className="mb-4 flex flex-col items-stretch justify-between sm:flex-row sm:items-center">
-        
-        <div className="mt-2 flex space-x-2 sm:mt-0">
-          <button
-            onClick={expandAll}
-            className="rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-          >
-            Expand All
-          </button>
-          <button
-            onClick={collapseAll}
-            className="rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-          >
-            Collapse All
-          </button>
-        </div>
-      </div>
+
       
       <AdminTools
         collectionName="positions"
@@ -526,6 +510,8 @@ const PositionsPage = () => {
         onRefresh={handleRefresh}
         isRefreshing={isLoading}
         isSchwabConnected={isSchwabConnected}
+        onExpandAll={expandAll}
+        onCollapseAll={collapseAll}
       />
 
       <div className="overflow-x-auto rounded-lg bg-white shadow">

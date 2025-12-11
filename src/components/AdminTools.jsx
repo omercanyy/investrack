@@ -67,6 +67,8 @@ const AdminTools = ({
   onRefresh,
   isRefreshing,
   isSchwabConnected,
+  onExpandAll,
+  onCollapseAll,
 }) => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -150,39 +152,61 @@ const AdminTools = ({
     <>
       <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
         <div className="flex flex-wrap items-center gap-4">
-          {onRefresh && (
+          <div className="flex flex-wrap items-center gap-4">
+            {onRefresh && (
+              <button
+                onClick={onRefresh}
+                disabled={!isSchwabConnected || isRefreshing}
+                className="relative inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <CloudArrowDownIcon
+                  className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`}
+                />
+                <span className="ml-2">{isRefreshing ? 'Refreshing...' : 'Refresh Prices'}</span>
+              </button>
+            )}
             <button
-              onClick={onRefresh}
-              disabled={!isSchwabConnected || isRefreshing}
-              className="relative inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={() => setIsModalOpen(true)}
+              disabled={isLoading}
+              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <CloudArrowDownIcon
-                className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`}
-              />
-              <span className="ml-2">{isRefreshing ? 'Refreshing...' : 'Refresh Prices'}</span>
+              Bulk Paste Data
             </button>
+            <button
+              onClick={handleClearAll}
+              disabled={isLoading}
+              className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Clear All {title}
+            </button>
+            <button
+              onClick={() => setIsStrategyModalOpen(true)}
+              disabled={isLoading}
+              className="rounded-md bg-gray-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Edit Strategies
+            </button>
+          </div>
+          {(onExpandAll || onCollapseAll) && (
+            <div className="ml-auto flex space-x-2">
+              {onExpandAll && (
+                <button
+                  onClick={onExpandAll}
+                  className="rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                >
+                  Expand All
+                </button>
+              )}
+              {onCollapseAll && (
+                <button
+                  onClick={onCollapseAll}
+                  className="rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                >
+                  Collapse All
+                </button>
+              )}
+            </div>
           )}
-          <button
-            onClick={() => setIsModalOpen(true)}
-            disabled={isLoading}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Bulk Paste Data
-          </button>
-          <button
-            onClick={handleClearAll}
-            disabled={isLoading}
-            className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Clear All {title}
-          </button>
-          <button
-            onClick={() => setIsStrategyModalOpen(true)}
-            disabled={isLoading}
-            className="rounded-md bg-gray-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Add/Remove Strategies
-          </button>
         </div>
         {message && (
           <p className="mt-3 text-sm font-medium text-gray-700">{message}</p>
