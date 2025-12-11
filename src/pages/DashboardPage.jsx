@@ -43,9 +43,6 @@ const DashboardPage = () => {
     matchedTradeStats,
     strategies,
     industries,
-    strategyIndustryMatrix,
-    strategyDefinitions,
-    industryDefinitions,
     closedPositions,
   } = usePortfolio();
 
@@ -169,11 +166,8 @@ const DashboardPage = () => {
       </div>
 
       <div className="mt-6">
-        <CollapsibleCard title="Industry vs Strategy Performance" startOpen={true}>
+        <CollapsibleCard title="Industry x Strategy" startOpen={true}>
           <StrategyIndustryMatrix
-            matrix={strategyIndustryMatrix}
-            strategies={strategyDefinitions}
-            industries={industryDefinitions}
             positions={positions}
             closedPositions={closedPositions}
             strategiesData={strategies}

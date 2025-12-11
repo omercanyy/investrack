@@ -22,37 +22,9 @@ const RenderGainLoss = ({ value }) => {
   return <span className={colorClass}>{formatPercentage(value)}</span>;
 };
 
-const StrategyIndustryMatrix = ({ matrix, strategies, industries, positions, closedPositions, strategiesData, industriesData, priceData }) => {
+const StrategyIndustryMatrix = ({ positions, closedPositions, strategiesData, industriesData, priceData }) => {
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Strategy
-            </th>
-            {industries.map(industry => (
-              <th key={industry} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                {industry}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {strategies.map(strategy => (
-            <tr key={strategy}>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                {strategy}
-              </td>
-              {industries.map(industry => (
-                <td key={industry} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <RenderGainLoss value={matrix[strategy]?.[industry] || 0} />
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
       <PortfolioHeatmaps 
         positions={positions} 
         closedPositions={closedPositions}
