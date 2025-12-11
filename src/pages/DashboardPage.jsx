@@ -6,6 +6,9 @@ import AllocationsTable from '../components/AllocationsTable';
 import CollapsibleCard from '../components/CollapsibleCard';
 import StrategyAllocationsTable from '../components/StrategyAllocationsTable';
 import AccountAllocationsTable from '../components/AccountAllocationsTable';
+import PositionsPage from './PositionsPage';
+import ClosedPositionsPage from './ClosedPositionsPage';
+
 
 import { ACCOUNT_TYPES } from '../constants/accounts';
 
@@ -114,6 +117,12 @@ const DashboardPage = () => {
         </StatCard>
       </div>
 
+      <div className="mt-6">
+        <CollapsibleCard title="Current Positions">
+          <PositionsPage />
+        </CollapsibleCard>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
         <CollapsibleCard title="Allocations by Account">
           <AccountAllocationsTable
@@ -177,6 +186,11 @@ const DashboardPage = () => {
               </tbody>
             </table>
           </div>
+        </CollapsibleCard>
+      </div>
+      <div className="mt-6">
+        <CollapsibleCard title="Closed Positions">
+          <ClosedPositionsPage />
         </CollapsibleCard>
       </div>
     </div>

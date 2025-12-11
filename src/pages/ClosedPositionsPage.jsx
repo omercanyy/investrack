@@ -55,7 +55,6 @@ const ClosedPositionsPage = () => {
   if (isLoading && processedPositions.length === 0) {
     return (
       <div>
-        <h1 className="mb-4 text-3xl font-bold text-gray-900">Closed Positions</h1>
         <AdminTools collectionName="closed_positions" title="Closed Positions" />
         <div className="rounded-lg bg-white p-6 text-center shadow">
           <h2 className="text-xl font-semibold text-gray-700">Loading...</h2>
@@ -66,7 +65,6 @@ const ClosedPositionsPage = () => {
 
   return (
     <div>
-      <h1 className="mb-4 text-3xl font-bold text-gray-900">Closed Positions</h1>
       
       <AdminTools collectionName="closed_positions" title="Closed Positions" />
 

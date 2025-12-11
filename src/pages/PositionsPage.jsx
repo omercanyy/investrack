@@ -356,7 +356,6 @@ const PositionsPage = () => {
   if (isLoading && aggregatedPositions.length === 0) {
     return (
       <div>
-        <h1 className="mb-4 text-3xl font-bold text-gray-900">Current Positions</h1>
         <AdminTools collectionName="positions" title="Positions" />
         <div className="rounded-lg bg-white p-6 text-center shadow">
           <h2 className="text-xl font-semibold text-gray-700">Loading...</h2>
@@ -504,7 +503,7 @@ const PositionsPage = () => {
   return (
     <div>
       <div className="mb-4 flex flex-col items-stretch justify-between sm:flex-row sm:items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Current Positions</h1>
+        
         <div className="mt-2 flex space-x-2 sm:mt-0">
           <button
             onClick={expandAll}
