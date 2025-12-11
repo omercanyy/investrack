@@ -6,6 +6,7 @@ import AllocationsTable from '../components/AllocationsTable';
 import CollapsibleCard from '../components/CollapsibleCard';
 import StrategyAllocationsTable from '../components/StrategyAllocationsTable';
 import AccountAllocationsTable from '../components/AccountAllocationsTable';
+import IndustryAllocationsTable from '../components/IndustryAllocationsTable';
 import PositionsPage from './PositionsPage';
 import ClosedPositionsPage from './ClosedPositionsPage';
 
@@ -140,6 +141,15 @@ const DashboardPage = () => {
             cash={totalCash}
           />
         </CollapsibleCard>
+        <CollapsibleCard title="Allocations by Industry">
+          <IndustryAllocationsTable
+            positions={aggregatedPositions}
+            totalValue={portfolioStats.totalValue}
+            cash={totalCash}
+          />
+        </CollapsibleCard>
+      </div>
+      <div className="mt-6">
         <CollapsibleCard title="Allocations by Ticker">
           <AllocationsTable
             positions={aggregatedPositions}
@@ -147,6 +157,8 @@ const DashboardPage = () => {
             cash={totalCash}
           />
         </CollapsibleCard>
+      </div>
+      <div className="mt-6">
         <CollapsibleCard title="Risk Analysis">
           <div className="overflow-x-auto mt-2">
             <table className="min-w-full divide-y divide-gray-200">
