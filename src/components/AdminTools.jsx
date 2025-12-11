@@ -12,6 +12,7 @@ import { CloudArrowDownIcon } from './Icons';
 import Modal from './Modal';
 import StrategyManager from './StrategyManager';
 import IndustryManager from './IndustryManager';
+import AddLotForm from './AddLotForm';
 
 const PasteModal = ({
   collectionName,
@@ -70,6 +71,7 @@ const AdminTools = ({
   isSchwabConnected,
   onExpandAll,
   onCollapseAll,
+  showAddLotForm,
 }) => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -220,6 +222,7 @@ const AdminTools = ({
         {message && (
           <p className="mt-3 text-sm font-medium text-gray-700">{message}</p>
         )}
+        {showAddLotForm && <AddLotForm />}
       </div>
 
       {isStrategyModalOpen && (

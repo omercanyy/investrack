@@ -15,6 +15,7 @@ import {
   BanknotesIcon,
   ArrowPathIcon,
   EditIcon,
+  PlusIcon,
 } from '../components/Icons';
 import ConfirmModal from '../components/ConfirmModal';
 import ClosePositionModal from '../components/ClosePositionModal';
@@ -142,6 +143,138 @@ const IndustrySelector = ({ user, ticker, currentIndustry, industryDefinitions }
     </select>
   );
 };
+
+const AddPositionRow = ({ user }) => {
+  const [ticker, setTicker] = useState('');
+  const [amount, setAmount] = useState('');
+  const [fillPrice, setFillPrice] = useState('');
+  const [date, setDate] = useState('');
+  const [account, setAccount] = useState('');
+  const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isFormValid = ticker && amount && fillPrice && date && account;
+
+  const resetForm = () => {
+    setTicker('');
+    setAmount('');
+    setFillPrice('');
+    setDate('');
+    setAccount('');
+    setError(null);
+    setIsSubmitting(false);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!isFormValid) {
+      setError('Please fill out all fields.');
+      return;
+    }
+    if (!user) {
+      setError('You must be logged in.');
+      return;
+    }
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const positionsCollectionPath = collection(
+        db,
+        'users',
+        user.uid,
+        'positions'
+      );
+      await addDoc(positionsCollectionPath, {
+        ticker: ticker.toUpperCase(),
+        amount: parseFloat(amount),
+        fillPrice: parseFloat(fillPrice),
+        date: date,
+        account: account,
+        createdAt: serverTimestamp(),
+      });
+      resetForm();
+    } catch (err) {
+      console.error('Error adding document: ', err);
+      setError('Failed to save.');
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <tr className="bg-gray-50 align-top">
+      <td className="whitespace-nowrap px-3 py-2">
+        <input
+          id="ticker"
+          type="text"
+          value={ticker}
+          onChange={(e) => setTicker(e.target.value)}
+          className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          placeholder="Ticker"
+        />
+      </td>
+      <td></td>
+      <td className="whitespace-nowrap px-3 py-2">
+        <input
+          id="amount"
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          placeholder="Amount"
+        />
+      </td>
+      <td className="whitespace-nowrap px-3 py-2">
+        <input
+          id="fillPrice"
+          type="number"
+          step="0.01"
+          value={fillPrice}
+          onChange={(e) => setFillPrice(e.target.value)}
+          className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          placeholder="Price"
+        />
+      </td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td className="whitespace-nowrap px-3 py-2">
+        <select
+          id="account"
+          value={account}
+          onChange={(e) => setAccount(e.target.value)}
+          className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+        >
+          <option value="">Select Account</option>
+          {Object.entries(ACCOUNT_TYPES).map(([id, name]) => (
+            <option key={id} value={id}>{name}</option>
+          ))}
+        </select>
+      </td>
+      <td></td>
+      <td className="whitespace-nowrap px-3 py-2 text-left">
+        <input
+            id="date"
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+        />
+      </td>
+      <td className="whitespace-nowrap px-3 py-2 text-left">
+        <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!isFormValid || isSubmitting}
+            className="h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm hover:bg-blue-700 disabled:bg-gray-300 inline-flex"
+          >
+            {isSubmitting ? <span className="text-xs">...</span> : <PlusIcon />}
+        </button>
+        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      </td>
+    </tr>
+  );
+};
+
 
 const PositionsPage = () => {
   const { user } = useAuth();
@@ -391,6 +524,7 @@ const PositionsPage = () => {
         onRefresh={handleRefresh}
         isRefreshing={isLoading}
         isSchwabConnected={isSchwabConnected}
+        showAddLotForm={true}
       />
 
       <div className="overflow-x-auto rounded-lg bg-white shadow">
@@ -434,7 +568,6 @@ const PositionsPage = () => {
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
             {renderTableBody()}
-            {/* <AddPositionRow user={user} /> */}
           </tbody>
         </table>
       </div>
