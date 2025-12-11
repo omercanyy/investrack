@@ -11,15 +11,12 @@
     "deploy": "npm run build && firebase deploy"
   },
   "dependencies": {
-    "@nivo/heatmap": "^0.99.0",
     "@webcarrot/xirr": "^3.0.1",
-    "apexcharts": "^5.3.6",
     "firebase": "^12.5.0",
     "lodash": "^4.17.21",
     "papaparse": "^5.5.3",
     "plotly.js": "^3.3.0",
     "react": "^19.1.1",
-    "react-apexcharts": "^1.9.0",
     "react-dom": "^19.1.1",
     "react-plotly.js": "^2.6.0",
     "recharts": "^3.3.0"
