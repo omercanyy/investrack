@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import Chart from 'react-apexcharts';
+import Plot from 'react-plotly.js';
 import _ from 'lodash';
 
 const PortfolioHeatmaps = ({ positions = [], closedPositions = [], strategies = {}, industries = {}, priceData = {} }) => {
@@ -11,7 +11,6 @@ const PortfolioHeatmaps = ({ positions = [], closedPositions = [], strategies = 
       const industry = industries[p.ticker]?.industry || 'Unassigned';
       const currentPrice = priceData[p.ticker] || 0;
       
-      // Skip if we don't have a current price, as we can't calculate returns.
       if (currentPrice === 0) return null;
 
       return {
@@ -34,144 +33,133 @@ const PortfolioHeatmaps = ({ positions = [], closedPositions = [], strategies = 
           ...p,
           strategy,
           industry,
-          currentPrice: p.exitPrice, // For closed positions, the "current" price is the exit price
+          currentPrice: p.exitPrice,
           fillPrice: p.fillPrice,
           costBasis: p.amount * p.fillPrice,
           amount: p.amount,
       };
     }).filter(Boolean);
 
-    return [...openTrades, ...closedTrades];
+    const combinedTrades = [...openTrades, ...closedTrades];
+    return combinedTrades.filter(trade => trade.strategy !== 'Unassigned' && trade.industry !== 'Unassigned');
   }, [positions, closedPositions, strategies, industries, priceData]);
 
-  const { skillData, impactData } = useMemo(() => {
+  const { skillPlot, impactPlot } = useMemo(() => {
     if (allTrades.length === 0) {
-      return { skillData: [], impactData: [] };
+      return { skillPlot: null, impactPlot: null };
     }
 
     const totalPortfolioCostBasis = _.sumBy(allTrades, 'costBasis');
-    
     const groupedByStrategyAndIndustry = _.groupBy(allTrades, d => `${d.strategy}_${d.industry}`);
 
     const processedData = _.map(groupedByStrategyAndIndustry, (trades, key) => {
       const [strategy, industry] = key.split('_');
       
       const avgROI = _.meanBy(trades, t => t.fillPrice !== 0 ? (t.currentPrice - t.fillPrice) / t.fillPrice : 0);
-      
       const totalProfitDollars = _.sumBy(trades, t => t.amount * (t.currentPrice - t.fillPrice));
       const contribution = totalPortfolioCostBasis > 0 ? totalProfitDollars / totalPortfolioCostBasis : 0;
+      const totalInvested = _.sumBy(trades, 'costBasis');
       
-      return { strategy, industry, avgROI, contribution };
+      return { strategy, industry, avgROI, contribution, netProfit: totalProfitDollars, totalInvested, tradeCount: trades.length };
     });
 
-    const strategies = _.uniq(processedData.map(d => d.strategy));
-    const industries = _.uniq(processedData.map(d => d.industry));
+    const uniqueStrategies = _.uniq(processedData.map(d => d.strategy));
+    const uniqueIndustries = _.uniq(processedData.map(d => d.industry));
 
-    const skillData = strategies.map(strategy => ({
-      name: strategy,
-      data: industries.map(industry => {
-        const cell = processedData.find(d => d.strategy === strategy && d.industry === industry);
-        return {
-          x: industry,
-          y: cell ? cell.avgROI * 100 : 0,
-        };
-      }),
-    }));
+    const createPlotData = (dataKey, metricName) => {
+      const z = uniqueStrategies.map(strategy => 
+        uniqueIndustries.map(industry => {
+          const cell = processedData.find(d => d.strategy === strategy && d.industry === industry);
+          return cell ? cell[dataKey] * 100 : 0;
+        })
+      );
 
-    const impactData = strategies.map(strategy => ({
-      name: strategy,
-      data: industries.map(industry => {
-        const cell = processedData.find(d => d.strategy === strategy && d.industry === industry);
-        return {
-          x: industry,
-          y: cell ? cell.contribution * 100 : 0,
-        };
-      }),
-    }));
+      const customdata = uniqueStrategies.map(strategy =>
+        uniqueIndustries.map(industry => {
+          const cell = processedData.find(d => d.strategy === strategy && d.industry === industry);
+          return {
+            netProfit: cell?.netProfit || 0,
+            totalInvested: cell?.totalInvested || 0,
+            tradeCount: cell?.tradeCount || 0,
+            metric: `${metricName}: ${(cell ? cell[dataKey] * 100 : 0).toFixed(2)}%`
+          };
+        })
+      );
+      
+      const allZValues = z.flat().filter(v => v !== null);
+      const min = Math.min(...allZValues);
+      const max = Math.max(...allZValues);
 
-    return { skillData, impactData };
-  }, [allTrades]);
+      let colorscale;
+      if (min >= 0) {
+        colorscale = [[0, '#dcfce7'], [1, '#15803d']]; // All positive
+      } else if (max <= 0) {
+        colorscale = [[0, '#fee2e2'], [1, '#b91c1c']]; // All negative
+      } else {
+        const zeroPoint = -min / (max - min);
+        colorscale = [
+            [0, '#b91c1c'],
+            [zeroPoint * 0.5, '#ef4444'],
+            [zeroPoint, '#f3f4f6'],
+            [zeroPoint + (1 - zeroPoint) * 0.5, '#a7f3d0'],
+            [1, '#15803d']
+        ];
+      }
 
-  const heatmapOptions = (title, yAxisFormatter) => ({
-    chart: {
-      type: 'heatmap',
-      toolbar: {
-        show: false,
-      },
-    },
-    plotOptions: {
-      heatmap: {
-        shadeIntensity: 0.5,
-        radius: 0,
-        useFillColorAsStroke: true,
-        colorScale: {
-          ranges: [
-            {
-              from: -10000,
-              to: -0.001,
-              name: 'Negative',
-              color: '#ef4444',
-            },
-            {
-              from: 0,
-              to: 0,
-              name: 'Neutral',
-              color: '#f3f4f6',
-            },
-            {
-              from: 0.001,
-              to: 10000,
-              name: 'Positive',
-              color: '#22c55e',
-            },
-          ],
+      return {
+        x: uniqueIndustries,
+        y: uniqueStrategies,
+        z,
+        customdata,
+        type: 'heatmap',
+        colorscale,
+        hovertemplate: `
+          <b>%{y} / %{x}</b><br><br>
+          Net Profit: %{customdata.netProfit:$,.2f}<br>
+          Total Invested: %{customdata.totalInvested:$,.2f}<br>
+          Trade Count: %{customdata.tradeCount}<br>
+          %{customdata.metric}
+          <extra></extra>
+        `.trim(),
+        texttemplate: '%{z:.2f}%',
+        textfont: {
+            color: '#000000'
         },
-      },
-    },
-    dataLabels: {
-      enabled: true,
-      style: {
-        colors: ['#000000']
-      },
-      formatter: (val) => yAxisFormatter(val),
-    },
-    stroke: {
-      width: 1,
-    },
-    title: {
-      text: title,
-      align: 'center',
-    },
-    yaxis: {
-      labels: {
-        formatter: (val) => val,
-      }
-    },
-    tooltip: {
-      y: {
-        formatter: (val) => yAxisFormatter(val),
-      }
-    }
+        colorbar: { tickformat: '.2f', title: '%' }
+      };
+    };
+
+    return {
+      skillPlot: createPlotData('avgROI', 'Avg. ROI'),
+      impactPlot: createPlotData('contribution', 'Impact'),
+    };
+  }, [allTrades]);
+  
+  const layout = (title) => ({
+    title,
+    autosize: true,
+    xaxis: { automargin: true },
+    yaxis: { automargin: true },
   });
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-      <div>
-        <Chart
-          options={heatmapOptions("Strategy Efficiency (Avg ROI %)", (val) => `${val.toFixed(2)}%`)}
-          series={skillData}
-          type="heatmap"
-          height={500}
+      {skillPlot && (
+        <Plot
+          data={[skillPlot]}
+          layout={layout("Strategy Efficiency (Avg ROI %)")}
+          useResizeHandler={true}
+          className="w-full h-full"
         />
-      </div>
-      <div>
-        <Chart
-          options={heatmapOptions("Portfolio Contribution (Weighted %)", (val) => `${val.toFixed(2)}% of portfolio`)}
-          series={impactData}
-          type="heatmap"
-          height={500}
+      )}
+      {impactPlot && (
+        <Plot
+          data={[impactPlot]}
+          layout={layout("Portfolio Contribution (Weighted %)")}
+          useResizeHandler={true}
+          className="w-full h-full"
         />
-      </div>
+      )}
     </div>
   );
 };
