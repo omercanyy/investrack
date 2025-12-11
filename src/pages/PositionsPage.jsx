@@ -157,12 +157,11 @@ const AddPositionRow = ({ user }) => {
   };
 
   return (
-    <tr className="block bg-gray-50 align-top md:table-row">
+    <tr className="bg-gray-50 align-top">
       {/* 1. Icon Column */}
-      <td className="hidden px-3 py-3 md:table-cell"></td>
+      <td className="px-3 py-3"></td>
       {/* 2. Ticker Column */}
-      <td className="block whitespace-nowrap px-3 py-2 md:table-cell md:py-3">
-        <label htmlFor="ticker" className="text-xs font-medium text-gray-500 md:hidden">Ticker</label>
+      <td className="whitespace-nowrap px-3 py-2">
         <input
           id="ticker"
           type="text"
@@ -172,8 +171,26 @@ const AddPositionRow = ({ user }) => {
           placeholder="Ticker"
         />
       </td>
-      <td className="block whitespace-nowrap px-3 py-2 md:table-cell md:py-3">
-        <label htmlFor="account" className="text-xs font-medium text-gray-500 md:hidden">Account</label>
+      {/* 3. Cost Basis Column */}
+      <td className="px-3 py-3"></td>
+      {/* 4. Current / Fill Price Column */}
+      <td className="whitespace-nowrap px-3 py-2">
+        <input
+          id="fillPrice"
+          type="number"
+          step="0.01"
+          value={fillPrice}
+          onChange={(e) => setFillPrice(e.target.value)}
+          className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          placeholder="Price"
+        />
+      </td>
+      {/* 5. Gain ($) Column */}
+      <td className="px-3 py-3"></td>
+      {/* 6. Gain (%) Column */}
+      <td className="px-3 py-3"></td>
+      {/* 7. Strategy / Account Column */}
+      <td className="whitespace-nowrap px-3 py-2">
         <select
           id="account"
           value={account}
@@ -186,32 +203,8 @@ const AddPositionRow = ({ user }) => {
           ))}
         </select>
       </td>
-      {/* 3. Cost Basis Column */}
-      <td className="hidden px-3 py-3 md:table-cell"></td>
-      {/* 4. Current Price Column */}
-      <td className="hidden px-3 py-3 md:table-cell"></td>
-      {/* 5. Gain ($) Column */}
-      <td className="hidden px-3 py-3 md:table-cell"></td>
-      {/* 6. Gain (%) Column */}
-      <td className="hidden px-3 py-3 md:table-cell"></td>
-      {/* 7. Strategy Column */}
-      <td className="hidden px-3 py-3 md:table-cell"></td>
-      {/* 8. Avg Fill Price / Fill Price Column */}
-      <td className="block whitespace-nowrap px-3 py-2 md:table-cell md:py-3">
-        <label htmlFor="fillPrice" className="text-xs font-medium text-gray-500 md:hidden">Fill Price</label>
-        <input
-          id="fillPrice"
-          type="number"
-          step="0.01"
-          value={fillPrice}
-          onChange={(e) => setFillPrice(e.target.value)}
-          className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          placeholder="Price"
-        />
-      </td>
       {/* 9. Amount Column */}
-      <td className="block whitespace-nowrap px-3 py-2 md:table-cell md:py-3">
-        <label htmlFor="amount" className="text-xs font-medium text-gray-500 md:hidden">Amount</label>
+      <td className="whitespace-nowrap px-3 py-2">
         <input
           id="amount"
           type="number"
@@ -222,37 +215,29 @@ const AddPositionRow = ({ user }) => {
         />
       </td>
       {/* 10. Current Value Column */}
-      <td className="hidden px-3 py-3 md:table-cell"></td>
+      <td className="px-3 py-3"></td>
       {/* 11. First Entry / Entry Date Column */}
-      <td className="block whitespace-nowrap px-3 py-2 md:table-cell md:py-3">
-        <label htmlFor="date" className="text-xs font-medium text-gray-500 md:hidden">Date</label>
-        <input
-          id="date"
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-        />
-      </td>
-      {/* 12. Risk Column */}
-      <td className="block whitespace-nowrap px-3 py-2 text-left md:table-cell md:py-3">
+      <td className="whitespace-nowrap px-3 py-2 text-left">
+        <div className="flex items-center space-x-2">
+          <div className="flex-grow">
+            <input
+              id="date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!isFormValid || isSubmitting}
+            className="h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm hover:bg-blue-700 disabled:bg-gray-300 inline-flex"
+          >
+            {isSubmitting ? <span className="text-xs">...</span> : <PlusIcon />}
+          </button>
+        </div>
         {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={!isFormValid || isSubmitting}
-          className="mt-2 inline-flex w-full items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:bg-gray-300 md:hidden"
-        >
-          {isSubmitting ? 'Adding...' : 'Add Position'}
-        </button>
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={!isFormValid || isSubmitting}
-          className="hidden h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm hover:bg-blue-700 disabled:bg-gray-300 md:inline-flex"
-        >
-          {isSubmitting ? <span className="text-xs">...</span> : <PlusIcon />}
-        </button>
       </td>
     </tr>
   );
@@ -384,7 +369,7 @@ const PositionsPage = () => {
     if (aggregatedPositions.length === 0) {
       return (
         <tr>
-          <td colSpan="12" className="px-4 py-4 text-center text-gray-500">
+          <td colSpan="10" className="px-4 py-4 text-center text-gray-500">
             No positions added yet. Use the row below to add one.
           </td>
         </tr>
@@ -399,8 +384,8 @@ const PositionsPage = () => {
       return (
         <React.Fragment key={ticker}>
           {/* Aggregated Row */}
-          <tr className="block bg-white hover:bg-gray-50 md:table-row">
-            <td className="whitespace-nowrap px-4 py-3 md:table-cell">
+          <tr className="bg-white hover:bg-gray-50">
+            <td className="whitespace-nowrap px-4 py-3">
               <button
                 onClick={() => toggleTickerExpansion(ticker)}
                 className="text-gray-500 hover:text-gray-700"
@@ -408,28 +393,28 @@ const PositionsPage = () => {
                 {isExpanded ? <ChevronDownIcon /> : <ChevronRightIcon />}
               </button>
             </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900 md:table-cell">
+            <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
               {ticker}
             </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
+            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
               {formatCurrency(group.totalCostBasis)}
             </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
+            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
               {formatCurrency(currentPrice)}
             </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm md:table-cell">
+            <td className="whitespace-nowrap px-4 py-3 text-sm">
               <RenderGainLoss
                 value={group.gainLoss}
                 formatter={formatCurrency}
               />
             </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm md:table-cell">
+            <td className="whitespace-nowrap px-4 py-3 text-sm">
               <RenderGainLoss
                 value={group.gainLossPercent}
                 formatter={formatPercentage}
               />
             </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
+            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
               <StrategySelector
                 user={user}
                 ticker={ticker}
@@ -437,22 +422,14 @@ const PositionsPage = () => {
                 strategyDefinitions={strategyDefinitions}
               />
             </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
-              {formatCurrency(group.weightedAvgFillPrice)}
-            </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
+            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
               {group.totalAmount}
             </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900 md:table-cell">
+            <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
               {formatCurrency(group.currentValue)}
             </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
+            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
               {group.oldestEntryDate}
-            </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 md:table-cell">
-              <span
-                className={`inline-block h-3 w-3 rounded-full ${getBetaCategoryClasses(group.betaCategory || 'UNKNOWN').fill}`}
-              ></span>
             </td>
           </tr>
 
@@ -466,9 +443,9 @@ const PositionsPage = () => {
                 lotCostBasis === 0 ? 0 : lotGainLoss / lotCostBasis;
 
               return (
-                <tr key={lot.id} className="block bg-gray-50 md:table-row">
-                  <td className="whitespace-nowrap px-4 py-2 text-center md:table-cell"></td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs font-medium text-gray-700 md:table-cell">
+                <tr key={lot.id} className="bg-gray-50">
+                  <td className="whitespace-nowrap px-4 py-2 text-center"></td>
+                  <td className="whitespace-nowrap px-4 py-2 text-xs font-medium text-gray-700">
                     <div className="flex justify-center space-x-2">
                       <button
                         onClick={() => handleClosePositionClick(lot)}
@@ -486,40 +463,36 @@ const PositionsPage = () => {
                       </button>
                     </div>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
+                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
                     {formatCurrency(lotCostBasis)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
-                    {formatCurrency(currentPrice)}
+                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
+                    {formatCurrency(lot.fillPrice)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs md:table-cell">
+                  <td className="whitespace-nowrap px-4 py-2 text-xs">
                     <RenderGainLoss
                       value={lotGainLoss}
                       formatter={formatCurrency}
                     />
                   </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs md:table-cell">
+                  <td className="whitespace-nowrap px-4 py-2 text-xs">
                     <RenderGainLoss
                       value={lotGainLossPercent}
                       formatter={formatPercentage}
                     />
                   </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
+                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
                     {ACCOUNT_TYPES[lot.account] || lot.account}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
-                    {formatCurrency(lot.fillPrice)}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
+                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
                     {lot.amount}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
+                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
                     {formatCurrency(lotCurrentValue)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell">
+                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
                     {lot.date}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500 md:table-cell"></td>
                 </tr>
               );
             })}
@@ -559,7 +532,7 @@ const PositionsPage = () => {
       <div className="overflow-x-auto rounded-lg bg-white shadow">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
-            <tr className="hidden md:table-row">
+            <tr>
               <th className="w-12 px-4 py-3"></th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Ticker
@@ -568,7 +541,7 @@ const PositionsPage = () => {
                 Cost Basis
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Current Price
+                Current / Fill Price
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Gain ($)
@@ -580,9 +553,6 @@ const PositionsPage = () => {
                 Strategy / Account
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Avg Fill Price / Fill Price
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Amount
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -590,9 +560,6 @@ const PositionsPage = () => {
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 First Entry / Entry Date
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Risk
               </th>
             </tr>
           </thead>
