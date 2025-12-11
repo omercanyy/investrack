@@ -100,6 +100,51 @@ const StrategySelector = ({ user, ticker, currentStrategy, strategyDefinitions }
   );
 };
 
+const IndustrySelector = ({ user, ticker, currentIndustry, industryDefinitions }) => {
+  const [industry, setIndustry] = useState(currentIndustry);
+
+  useEffect(() => {
+    setIndustry(currentIndustry);
+  }, [currentIndustry]);
+
+  const allOptions = useMemo(() => {
+    const options = new Set(industryDefinitions);
+    if (currentIndustry && !options.has(currentIndustry)) {
+      options.add(currentIndustry);
+    }
+    return Array.from(options);
+  }, [industryDefinitions, currentIndustry]);
+
+  const handleChange = async (e) => {
+    const newIndustry = e.target.value;
+    setIndustry(newIndustry);
+    if (!user || !ticker) return;
+    const docPath = doc(db, 'users', user.uid, 'industries', ticker);
+    try {
+      if (newIndustry) {
+        await setDoc(docPath, { industry: newIndustry });
+      } else {
+        await deleteDoc(docPath);
+      }
+    } catch (err) {
+      console.error('Failed to save industry: ', err);
+    }
+  };
+
+  return (
+    <select
+      value={industry}
+      onChange={handleChange}
+      className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+    >
+      <option value="">Unassigned</option>
+      {allOptions.map((opt) => (
+        <option key={opt} value={opt}>{opt}</option>
+      ))}
+    </select>
+  );
+};
+
 const AddPositionRow = ({ user }) => {
   const [ticker, setTicker] = useState('');
   const [amount, setAmount] = useState('');
@@ -216,7 +261,9 @@ const AddPositionRow = ({ user }) => {
           ))}
         </select>
       </td>
-      {/* 10. First Entry / Entry Date Column */}
+      {/* 10. Industry Column */}
+      <td className="px-3 py-3"></td>
+      {/* 11. First Entry / Entry Date Column */}
       <td className="whitespace-nowrap px-3 py-2 text-left">
         <div className="flex items-center space-x-2">
           <div className="flex-grow">
@@ -251,6 +298,7 @@ const PositionsPage = () => {
     refreshMarketData,
     isSchwabConnected,
     strategyDefinitions,
+    industryDefinitions,
   } = usePortfolio();
 
   const [expandedTickers, setExpandedTickers] = useState([]);
@@ -368,7 +416,7 @@ const PositionsPage = () => {
     if (aggregatedPositions.length === 0) {
       return (
         <tr>
-          <td colSpan="10" className="px-4 py-4 text-center text-gray-500">
+          <td colSpan="11" className="px-4 py-4 text-center text-gray-500">
             No positions added yet. Use the row below to add one.
           </td>
         </tr>
@@ -425,6 +473,14 @@ const PositionsPage = () => {
                 ticker={ticker}
                 currentStrategy={group.strategy}
                 strategyDefinitions={strategyDefinitions}
+              />
+            </td>
+            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+              <IndustrySelector
+                user={user}
+                ticker={ticker}
+                currentIndustry={group.industry}
+                industryDefinitions={industryDefinitions}
               />
             </td>
             <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
@@ -490,6 +546,9 @@ const PositionsPage = () => {
                     {ACCOUNT_TYPES[lot.account] || lot.account}
                   </td>
                   <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
+                    {group.industry}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
                     {lot.date}
                   </td>
                 </tr>
@@ -542,6 +601,9 @@ const PositionsPage = () => {
               </th>
               <th style={{whiteSpace: 'pre-wrap'}} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 {'Strategy/\nAccount'}
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Industry
               </th>
               <th style={{whiteSpace: 'pre-wrap'}} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 {'First/\nEntry'}

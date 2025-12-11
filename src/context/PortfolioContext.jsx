@@ -34,6 +34,8 @@ export const PortfolioProvider = ({ children }) => {
   const [closedPositions, setClosedPositions] = useState([]);
   const [strategies, setStrategies] = useState({});
   const [strategyDefinitions, setStrategyDefinitions] = useState([]);
+  const [industries, setIndustries] = useState({});
+  const [industryDefinitions, setIndustryDefinitions] = useState([]);
   const [priceData, setPriceData] = useState({});
   const [betas, setBetas] = useState({});
   const [availableCash, setAvailableCash] = useState({});
@@ -244,6 +246,38 @@ export const PortfolioProvider = ({ children }) => {
   }, [user]);
 
   useEffect(() => {
+    if (!user) {
+      setIndustries({});
+      return;
+    }
+    const industriesPath = collection(db, 'users', user.uid, 'industries');
+    const unsubscribe = onSnapshot(industriesPath, (snapshot) => {
+      const industryData = {};
+      snapshot.forEach((doc) => {
+        industryData[doc.id] = doc.data();
+      });
+      setIndustries(industryData);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      setIndustryDefinitions([]);
+      return;
+    }
+    const defsDocPath = doc(db, 'users', user.uid, 'app-settings', 'industries');
+    const unsubscribe = onSnapshot(defsDocPath, (snapshot) => {
+      if (snapshot.exists()) {
+        setIndustryDefinitions(snapshot.data().definitions || []);
+      } else {
+        setIndustryDefinitions([]);
+      }
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  useEffect(() => {
     refreshMarketData();
     const intervalId = setInterval(refreshMarketData, 300000);
     return () => clearInterval(intervalId);
@@ -259,6 +293,7 @@ export const PortfolioProvider = ({ children }) => {
           totalAmount: 0,
           totalCostBasis: 0,
           strategy: strategies[pos.ticker]?.strategy || '',
+          industry: industries[pos.ticker]?.industry || '',
           oldestEntryDate: pos.date,
           accounts: [],
         };
@@ -294,7 +329,7 @@ export const PortfolioProvider = ({ children }) => {
     return Object.values(groups).sort((a, b) =>
       a.ticker.localeCompare(b.ticker)
     );
-  }, [positions, priceData, strategies, betas]);
+  }, [positions, priceData, strategies, industries, betas]);
 
   const betaDistribution = useMemo(() => {
     const distribution = {
@@ -399,6 +434,8 @@ export const PortfolioProvider = ({ children }) => {
     closedPositions,
     strategies,
     strategyDefinitions,
+    industries,
+    industryDefinitions,
     priceData,
     aggregatedPositions,
     portfolioStats,

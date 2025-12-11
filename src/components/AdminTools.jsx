@@ -11,6 +11,7 @@ import { processTSVString } from '../utils/tsvParser';
 import { CloudArrowDownIcon } from './Icons';
 import Modal from './Modal';
 import StrategyManager from './StrategyManager';
+import IndustryManager from './IndustryManager';
 
 const PasteModal = ({
   collectionName,
@@ -75,6 +76,7 @@ const AdminTools = ({
   const [message, setMessage] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isStrategyModalOpen, setIsStrategyModalOpen] = useState(false);
+  const [isIndustryModalOpen, setIsIndustryModalOpen] = useState(false);
 
   const handlePasteSubmit = async (tsvString) => {
     if (!tsvString || !user) {
@@ -186,6 +188,13 @@ const AdminTools = ({
             >
               Edit Strategies
             </button>
+            <button
+              onClick={() => setIsIndustryModalOpen(true)}
+              disabled={isLoading}
+              className="rounded-md bg-gray-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Edit Industries
+            </button>
           </div>
           {(onExpandAll || onCollapseAll) && (
             <div className="ml-auto flex space-x-2">
@@ -215,6 +224,10 @@ const AdminTools = ({
 
       {isStrategyModalOpen && (
         <StrategyManager onClose={() => setIsStrategyModalOpen(false)} />
+      )}
+
+      {isIndustryModalOpen && (
+        <IndustryManager onClose={() => setIsIndustryModalOpen(false)} />
       )}
 
       {isModalOpen && (
