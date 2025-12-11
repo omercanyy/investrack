@@ -171,9 +171,22 @@ const AddPositionRow = ({ user }) => {
           placeholder="Ticker"
         />
       </td>
-      {/* 3. Cost Basis Column */}
+      {/* 3. Gain ($) Column */}
       <td className="px-3 py-3"></td>
-      {/* 4. Current / Fill Price Column */}
+      {/* 4. Gain (%) Column */}
+      <td className="px-3 py-3"></td>
+      {/* 5. Amount Column */}
+      <td className="whitespace-nowrap px-3 py-2">
+        <input
+          id="amount"
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          placeholder="Amount"
+        />
+      </td>
+      {/* 6. Current / Fill Price Column */}
       <td className="whitespace-nowrap px-3 py-2">
         <input
           id="fillPrice"
@@ -185,11 +198,11 @@ const AddPositionRow = ({ user }) => {
           placeholder="Price"
         />
       </td>
-      {/* 5. Gain ($) Column */}
+      {/* 7. Current Value Column */}
       <td className="px-3 py-3"></td>
-      {/* 6. Gain (%) Column */}
+      {/* 8. Cost Basis Column */}
       <td className="px-3 py-3"></td>
-      {/* 7. Strategy / Account Column */}
+      {/* 9. Strategy / Account Column */}
       <td className="whitespace-nowrap px-3 py-2">
         <select
           id="account"
@@ -203,20 +216,7 @@ const AddPositionRow = ({ user }) => {
           ))}
         </select>
       </td>
-      {/* 9. Amount Column */}
-      <td className="whitespace-nowrap px-3 py-2">
-        <input
-          id="amount"
-          type="number"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          placeholder="Amount"
-        />
-      </td>
-      {/* 10. Current Value Column */}
-      <td className="px-3 py-3"></td>
-      {/* 11. First Entry / Entry Date Column */}
+      {/* 10. First Entry / Entry Date Column */}
       <td className="whitespace-nowrap px-3 py-2 text-left">
         <div className="flex items-center space-x-2">
           <div className="flex-grow">
@@ -395,12 +395,6 @@ const PositionsPage = () => {
             <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
               {ticker}
             </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
-              {formatCurrency(group.totalCostBasis)}
-            </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
-              {formatCurrency(currentPrice)}
-            </td>
             <td className="whitespace-nowrap px-4 py-3 text-sm">
               <RenderGainLoss
                 value={group.gainLoss}
@@ -414,18 +408,24 @@ const PositionsPage = () => {
               />
             </td>
             <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+              {group.totalAmount}
+            </td>
+            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+              {formatCurrency(currentPrice)}
+            </td>
+            <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
+              {formatCurrency(group.currentValue)}
+            </td>
+            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+              {formatCurrency(group.totalCostBasis)}
+            </td>
+            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
               <StrategySelector
                 user={user}
                 ticker={ticker}
                 currentStrategy={group.strategy}
                 strategyDefinitions={strategyDefinitions}
               />
-            </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
-              {group.totalAmount}
-            </td>
-            <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
-              {formatCurrency(group.currentValue)}
             </td>
             <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
               {group.oldestEntryDate}
@@ -462,12 +462,6 @@ const PositionsPage = () => {
                       </button>
                     </div>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
-                    {formatCurrency(lotCostBasis)}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
-                    {formatCurrency(lot.fillPrice)}
-                  </td>
                   <td className="whitespace-nowrap px-4 py-2 text-xs">
                     <RenderGainLoss
                       value={lotGainLoss}
@@ -481,13 +475,19 @@ const PositionsPage = () => {
                     />
                   </td>
                   <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
-                    {ACCOUNT_TYPES[lot.account] || lot.account}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
                     {lot.amount}
                   </td>
                   <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
+                    {formatCurrency(lot.fillPrice)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
                     {formatCurrency(lotCurrentValue)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
+                    {formatCurrency(lotCostBasis)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
+                    {ACCOUNT_TYPES[lot.account] || lot.account}
                   </td>
                   <td className="whitespace-nowrap px-4 py-2 text-xs text-gray-500">
                     {lot.date}
@@ -537,28 +537,28 @@ const PositionsPage = () => {
                 Ticker
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Cost Basis
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Current / Fill Price
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Gain ($)
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Gain (%)
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Strategy / Account
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Amount
+              </th>
+              <th style={{whiteSpace: 'pre-wrap'}} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                {'Current/Fill\nPrice'}
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Current Value
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                First Entry / Entry Date
+                Cost Basis
+              </th>
+              <th style={{whiteSpace: 'pre-wrap'}} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                {'Strategy/\nAccount'}
+              </th>
+              <th style={{whiteSpace: 'pre-wrap'}} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                {'First/\nEntry'}
               </th>
             </tr>
           </thead>
