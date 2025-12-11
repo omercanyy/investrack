@@ -11,21 +11,19 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 import {
-  PlusIcon,
-  ChevronRightIcon,
-  ChevronDownIcon,
   TrashIcon,
   BanknotesIcon,
   ArrowPathIcon,
+  EditIcon,
 } from '../components/Icons';
 import ConfirmModal from '../components/ConfirmModal';
 import ClosePositionModal from '../components/ClosePositionModal';
+import EditPositionModal from '../components/EditPositionModal';
 import { usePortfolio } from '../context/PortfolioContext';
 import { useAuth } from '../context/AuthContext';
 import AdminTools from '../components/AdminTools';
 import { ACCOUNT_TYPES } from '../constants/accounts';
 import { getBetaCategoryClasses } from '../utils/betaCalculator';
-
 
 const formatCurrency = (value) => {
   if (typeof value !== 'number') {
@@ -145,149 +143,6 @@ const IndustrySelector = ({ user, ticker, currentIndustry, industryDefinitions }
   );
 };
 
-const AddPositionRow = ({ user }) => {
-  const [ticker, setTicker] = useState('');
-  const [amount, setAmount] = useState('');
-  const [fillPrice, setFillPrice] = useState('');
-  const [date, setDate] = useState('');
-  const [account, setAccount] = useState('');
-  const [error, setError] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const isFormValid = ticker && amount && fillPrice && date && account;
-
-  const resetForm = () => {
-    setTicker('');
-    setAmount('');
-    setFillPrice('');
-    setDate('');
-    setAccount('');
-    setError(null);
-    setIsSubmitting(false);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!isFormValid) {
-      setError('Please fill out all fields.');
-      return;
-    }
-    if (!user) {
-      setError('You must be logged in.');
-      return;
-    }
-    setIsSubmitting(true);
-    setError(null);
-    try {
-      const positionsCollectionPath = collection(
-        db,
-        'users',
-        user.uid,
-        'positions'
-      );
-      await addDoc(positionsCollectionPath, {
-        ticker: ticker.toUpperCase(),
-        amount: parseFloat(amount),
-        fillPrice: parseFloat(fillPrice),
-        date: date,
-        account: account,
-        createdAt: serverTimestamp(),
-      });
-      resetForm();
-    } catch (err) {
-      console.error('Error adding document: ', err);
-      setError('Failed to save.');
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <tr className="bg-gray-50 align-top">
-      {/* 1. Icon Column */}
-      <td className="px-3 py-3"></td>
-      {/* 2. Ticker Column */}
-      <td className="whitespace-nowrap px-3 py-2">
-        <input
-          id="ticker"
-          type="text"
-          value={ticker}
-          onChange={(e) => setTicker(e.target.value)}
-          className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          placeholder="Ticker"
-        />
-      </td>
-      {/* 3. Gain Column */}
-      <td className="px-3 py-3"></td>
-      {/* 4. Amount Column */}
-      <td className="whitespace-nowrap px-3 py-2">
-        <input
-          id="amount"
-          type="number"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          placeholder="Amount"
-        />
-      </td>
-      {/* 6. Current / Fill Price Column */}
-      <td className="whitespace-nowrap px-3 py-2">
-        <input
-          id="fillPrice"
-          type="number"
-          step="0.01"
-          value={fillPrice}
-          onChange={(e) => setFillPrice(e.target.value)}
-          className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          placeholder="Price"
-        />
-      </td>
-      {/* 7. Current Value Column */}
-      <td className="px-3 py-3"></td>
-      {/* 8. Cost Basis Column */}
-      <td className="px-3 py-3"></td>
-      {/* 9. Strategy / Account Column */}
-      <td className="whitespace-nowrap px-3 py-2">
-        <select
-          id="account"
-          value={account}
-          onChange={(e) => setAccount(e.target.value)}
-          className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-        >
-          <option value="">Select Account</option>
-          {Object.entries(ACCOUNT_TYPES).map(([id, name]) => (
-            <option key={id} value={id}>{name}</option>
-          ))}
-        </select>
-      </td>
-      {/* 10. Industry Column */}
-      <td className="px-3 py-3"></td>
-      {/* 11. First Entry / Entry Date Column */}
-      <td className="whitespace-nowrap px-3 py-2 text-left">
-        <div className="flex items-center space-x-2">
-          <div className="flex-grow">
-            <input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!isFormValid || isSubmitting}
-            className="h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm hover:bg-blue-700 disabled:bg-gray-300 inline-flex"
-          >
-            {isSubmitting ? <span className="text-xs">...</span> : <PlusIcon />}
-          </button>
-        </div>
-        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-      </td>
-    </tr>
-  );
-};
-
 const PositionsPage = () => {
   const { user } = useAuth();
   const {
@@ -305,6 +160,7 @@ const PositionsPage = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedLot, setSelectedLot] = useState(null);
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   
   const handleRefresh = () => {
     if (isSchwabConnected) {
@@ -372,6 +228,34 @@ const PositionsPage = () => {
       console.error('Error closing position: ', error);
     } finally {
       handleCloseClosePositionModal();
+    }
+  };
+
+  const handleEditClick = (lot) => {
+    setSelectedLot(lot);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedLot(null);
+  };
+
+  const handleConfirmEdit = async (editedLot) => {
+    if (!editedLot || !user) return;
+    try {
+      const docPath = doc(db, 'users', user.uid, 'positions', editedLot.id);
+      await updateDoc(docPath, {
+        ticker: editedLot.ticker,
+        amount: editedLot.amount,
+        fillPrice: editedLot.fillPrice,
+        date: editedLot.date,
+        account: editedLot.account,
+      });
+    } catch (error) {
+      console.error('Error updating document: ', error);
+    } finally {
+      handleCloseEditModal();
     }
   };
 
@@ -471,6 +355,13 @@ const PositionsPage = () => {
             <div className="flex items-center">
               <div className="mr-2">
                 <button
+                  onClick={() => handleEditClick(lot)}
+                  title="Edit Lot"
+                  className="text-blue-500 hover:text-blue-700"
+                >
+                  <EditIcon />
+                </button>
+                <button
                   onClick={() => handleClosePositionClick(lot)}
                   title="Sell/Close Position"
                   className="text-green-600 hover:text-green-800"
@@ -560,6 +451,13 @@ const PositionsPage = () => {
         isOpen={isCloseModalOpen}
         onClose={handleCloseClosePositionModal}
         onConfirm={handleConfirmClosePosition}
+        lot={selectedLot}
+      />
+
+      <EditPositionModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        onConfirm={handleConfirmEdit}
         lot={selectedLot}
       />
     </div>

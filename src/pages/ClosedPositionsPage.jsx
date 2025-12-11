@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { usePortfolio } from '../context/PortfolioContext';
 import AdminTools from '../components/AdminTools';
-import { TrashIcon } from '../components/Icons';
+import { TrashIcon, EditIcon } from '../components/Icons';
 import ConfirmModal from '../components/ConfirmModal';
+import EditClosedPositionModal from '../components/EditClosedPositionModal';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
-import { doc, deleteDoc } from 'firebase/firestore';
+import { doc, deleteDoc, updateDoc } from 'firebase/firestore';
 
 const formatCurrency = (value) => {
   if (typeof value !== 'number') {
@@ -40,6 +41,7 @@ const ClosedPositionsPage = () => {
   const { user } = useAuth();
   const { isLoading, closedPositions } = usePortfolio();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState(null);
 
   const processedPositions = useMemo(() => {
@@ -79,6 +81,36 @@ const ClosedPositionsPage = () => {
       console.error('Error deleting document: ', error);
     } finally {
       handleCloseDeleteModal();
+    }
+  };
+
+  const handleEditClick = (pos) => {
+    setSelectedPosition(pos);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedPosition(null);
+  };
+
+  const handleConfirmEdit = async (editedLot) => {
+    if (!editedLot || !user) return;
+    try {
+      const docPath = doc(db, 'users', user.uid, 'closed_positions', editedLot.id);
+      await updateDoc(docPath, {
+        ticker: editedLot.ticker,
+        amount: editedLot.amount,
+        fillPrice: editedLot.fillPrice,
+        date: editedLot.date,
+        exitPrice: editedLot.exitPrice,
+        exitDate: editedLot.exitDate,
+        account: editedLot.account,
+      });
+    } catch (error) {
+      console.error('Error updating document: ', error);
+    } finally {
+      handleCloseEditModal();
     }
   };
 
@@ -191,6 +223,13 @@ const ClosedPositionsPage = () => {
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
                     <button
+                      onClick={() => handleEditClick(pos)}
+                      title="Edit Closed Position"
+                      className="text-blue-500 hover:text-blue-700 mr-2"
+                    >
+                      <EditIcon />
+                    </button>
+                    <button
                       onClick={() => handleDeleteClick(pos)}
                       title="Delete Closed Position"
                       className="text-red-500 hover:text-red-700"
@@ -210,6 +249,12 @@ const ClosedPositionsPage = () => {
         onConfirm={handleConfirmDelete}
         title="Delete Closed Position"
         message="Are you sure you want to delete this closed position? This action cannot be undone."
+      />
+      <EditClosedPositionModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        onConfirm={handleConfirmEdit}
+        lot={selectedPosition}
       />
     </div>
   );
