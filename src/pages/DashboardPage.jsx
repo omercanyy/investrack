@@ -52,6 +52,21 @@ const DashboardPage = () => {
 
   const isPositive = portfolioStats.totalGainLoss > 0;
 
+  const getXirrColor = (portfolio, spy, gld) => {
+    const values = [
+      { name: 'portfolio', value: portfolio },
+      { name: 'spy', value: spy },
+      { name: 'gld', value: gld },
+    ];
+    values.sort((a, b) => b.value - a.value);
+    const portfolioRank = values.findIndex((v) => v.name === 'portfolio');
+    if (portfolioRank === 0) return 'text-green-500';
+    if (portfolioRank === 2) return 'text-red-500';
+    return 'text-yellow-500';
+  };
+
+  const xirrColor = getXirrColor(xirrValues.portfolio, xirrValues.spy, xirrValues.gld);
+
   return (
     <div>
       <h1 className="mb-4 text-3xl font-bold text-gray-900">Dashboard</h1>
@@ -90,7 +105,7 @@ const DashboardPage = () => {
         <StatCard
           title="Portfolio XIRR (annualized)"
           primaryValue={`${(xirrValues.portfolio * 100).toFixed(2)}%`}
-          primaryValueColor={xirrValues.portfolio > 0 ? "text-green-500" : "text-red-500"}
+          primaryValueColor={xirrColor}
         >
           <div className="text-xs text-gray-500 mt-1">
             <p>S&P 500: {(xirrValues.spy * 100).toFixed(2)}% | Gold: {(xirrValues.gld * 100).toFixed(2)}%</p>
