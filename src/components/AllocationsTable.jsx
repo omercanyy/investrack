@@ -10,6 +10,18 @@ const formatCurrency = (value) => {
   }).format(value);
 };
 
+const formatGain = (gain, gainPercent) => {
+  const gainFormatted = formatCurrency(gain);
+  const percentFormatted = `${(gainPercent * 100).toFixed(2)}%`;
+  return `${gainFormatted} (${percentFormatted})`;
+};
+
+const RenderGainLoss = ({ value, formatter = (val) => val }) => {
+  const colorClass =
+    value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-gray-500';
+  return <span className={colorClass}>{formatter(value)}</span>;
+};
+
 const AllocationsTable = ({ positions, totalValue, cash }) => {
   const sortedPositions = [...positions].sort((a, b) => b.currentValue - a.currentValue);
 
@@ -27,6 +39,9 @@ const AllocationsTable = ({ positions, totalValue, cash }) => {
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Allocation
             </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Gain
+            </th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
@@ -41,6 +56,12 @@ const AllocationsTable = ({ positions, totalValue, cash }) => {
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {((pos.currentValue / totalValue) * 100).toFixed(2)}%
               </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <RenderGainLoss
+                  value={pos.gainLoss}
+                  formatter={() => formatGain(pos.gainLoss, pos.gainLossPercent)}
+                />
+              </td>
             </tr>
           ))}
           <tr>
@@ -53,6 +74,7 @@ const AllocationsTable = ({ positions, totalValue, cash }) => {
             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
               {((cash / totalValue) * 100).toFixed(2)}%
             </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
           </tr>
         </tbody>
       </table>

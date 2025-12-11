@@ -57,16 +57,21 @@ const schwabApi = async (endpoint, options = {}) => {
 export const fetchCurrentPrices = async (tickers) => {
   const symbols = tickers.join(',');
   console.log('Fetching current prices for tickers:', symbols);
-  const endpoint = `/marketdata/v1/quotes?symbols=${symbols}`;
+  const endpoint = `/marketdata/v1/quotes?symbols=${symbols}&fields=quote,extended`;
   // Pass cache option to ensure we get real-time data
   const response = await schwabApi(endpoint, { cache: 'no-cache' });
 
   const priceData = {};
   for (const ticker in response) {
     if (response[ticker] && response[ticker].quote) {
-      priceData[ticker] =
-        response[ticker].quote.lastPrice ||
-        response[ticker].quote.lastPriceInDouble;
+      const quote = response[ticker].quote;
+      const extended = response[ticker].extended;
+
+      if (extended && extended.extendedHours) {
+        priceData[ticker] = extended.lastPrice || quote.lastPrice || quote.lastPriceInDouble;
+      } else {
+        priceData[ticker] = quote.lastPrice || quote.lastPriceInDouble;
+      }
     }
   }
 

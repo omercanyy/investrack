@@ -10,6 +10,18 @@ const formatCurrency = (value) => {
   }).format(value);
 };
 
+const formatGain = (gain, gainPercent) => {
+  const gainFormatted = formatCurrency(gain);
+  const percentFormatted = `${(gainPercent * 100).toFixed(2)}%`;
+  return `${gainFormatted} (${percentFormatted})`;
+};
+
+const RenderGainLoss = ({ value, formatter = (val) => val }) => {
+  const colorClass =
+    value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-gray-500';
+  return <span className={colorClass}>{formatter(value)}</span>;
+};
+
 const toTitleCase = (str) => {
   if (!str) return '';
   return str.replace(
@@ -38,25 +50,33 @@ const AccountAllocationsTable = ({
     }
 
     if (!acc[accountKey]) {
-      acc[accountKey] = 0;
+      acc[accountKey] = { value: 0, cost: 0 };
     }
     const currentPrice = priceData[pos.ticker] || 0;
-    acc[accountKey] += pos.amount * currentPrice;
+    acc[accountKey].value += pos.amount * currentPrice;
+    acc[accountKey].cost += pos.amount * pos.fillPrice;
     return acc;
   }, {});
 
   // Add cash to each account's total
   Object.entries(cashByAccount).forEach(([account, cash]) => {
     if (!byAccount[account]) {
-      byAccount[account] = 0;
+      byAccount[account] = { value: 0, cost: 0 };
     }
-    byAccount[account] += cash;
+    byAccount[account].value += cash;
+    byAccount[account].cost += cash;
   });
 
-  const tableData = Object.entries(byAccount).map(([account, value]) => ({
-    account: accountNames[account] || account,
-    value,
-  }));
+  const tableData = Object.entries(byAccount).map(([account, data]) => {
+    const gain = data.value - data.cost;
+    const gainPercent = data.cost === 0 ? 0 : gain / data.cost;
+    return {
+      account: accountNames[account] || account,
+      value: data.value,
+      gain,
+      gainPercent,
+    };
+  });
 
   tableData.sort((a, b) => b.value - a.value);
 
@@ -74,10 +94,13 @@ const AccountAllocationsTable = ({
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Allocation
             </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Gain
+            </th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {tableData.map(({ account, value }) => (
+          {tableData.map(({ account, value, gain, gainPercent }) => (
             <tr key={account}>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                 {account}
@@ -87,6 +110,14 @@ const AccountAllocationsTable = ({
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {totalValue > 0 ? ((value / totalValue) * 100).toFixed(2) : 0}%
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {gainPercent === 0 && gain === 0 ? '-' : (
+                  <RenderGainLoss
+                    value={gain}
+                    formatter={() => formatGain(gain, gainPercent)}
+                  />
+                )}
               </td>
             </tr>
           ))}
