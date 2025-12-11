@@ -1,5 +1,4 @@
 import { xirr } from '@webcarrot/xirr';
-import { fetchHistoricalPrices } from './schwabApi';
 
 function prepareTransactions(positions, closedPositions, totalCurrentValue) {
   const transactions = [];
@@ -32,38 +31,28 @@ function prepareTransactions(positions, closedPositions, totalCurrentValue) {
   return transactions;
 }
 
-async function fetchHistoricalPrice(ticker, date) {
-  try {
-    const normalizedDate = new Date(date);
-    normalizedDate.setHours(23, 59, 59, 999);
-    const response = await fetchHistoricalPrices(ticker, normalizedDate);
-    const candles = response.candles;
-    if (!candles || candles.length === 0) {
-      return 0;
+function findPriceInHistory(history, date) {
+  if (!history || history.length === 0) return null;
+  
+  const targetTime = new Date(date).setHours(0, 0, 0, 0);
+
+  let closestCandle = null;
+  for (const candle of history) {
+    const candleTime = new Date(candle.datetime).setHours(0, 0, 0, 0);
+    if (candleTime <= targetTime) {
+      closestCandle = candle;
+    } else {
+      break;
     }
-
-    // Find the candle for the specific date
-    const targetDate = new Date(date);
-    const targetTimestamp = targetDate.getTime();
-    const candle = candles.find(c => {
-      const candleDate = new Date(c.datetime);
-      return candleDate.getFullYear() === targetDate.getFullYear() &&
-             candleDate.getMonth() === targetDate.getMonth() &&
-             candleDate.getDate() === targetDate.getDate();
-    });
-
-    return candle ? candle.close || candle.closePrice : 0;
-  } catch (error) {
-    console.error(`Error fetching historical price for ${ticker}:`, error);
-    return 0;
   }
+  return closestCandle ? closestCandle.close : null;
 }
 
 async function simulateBenchmark(
   positions,
   closedPositions,
-  benchmarkTicker,
-  benchmarkCurrentPrice
+  benchmarkCurrentPrice,
+  benchmarkHistory
 ) {
   const allBuys = [
     ...positions.map((p) => ({
@@ -79,12 +68,12 @@ async function simulateBenchmark(
   let totalSharesOwned = 0;
   const simulatedTransactions = [];
 
-  const pricePromises = allBuys.map(async (buy) => {
-    const benchmarkPriceOnDate = await fetchHistoricalPrice(
-      benchmarkTicker,
-      buy.date
-    );
-    if (benchmarkPriceOnDate === 0) return;
+  for (const buy of allBuys) {
+    const benchmarkPriceOnDate = findPriceInHistory(benchmarkHistory, buy.date);
+
+    if (!benchmarkPriceOnDate) {
+      continue;
+    }
 
     const sharesBought = buy.cost / benchmarkPriceOnDate;
     totalSharesOwned += sharesBought;
@@ -93,9 +82,7 @@ async function simulateBenchmark(
       amount: -buy.cost,
       date: new Date(buy.date),
     });
-  });
-
-  await Promise.all(pricePromises);
+  }
 
   if (totalSharesOwned > 0 && benchmarkCurrentPrice > 0) {
     simulatedTransactions.push({
@@ -112,7 +99,9 @@ export const calculateAllXIRR = async (
   closedPositions,
   totalCurrentValue,
   spyPrice,
-  gldPrice
+  gldPrice,
+  spyHistory,
+  gldHistory,
 ) => {
   try {
     const portfolioTxs = prepareTransactions(
@@ -125,16 +114,16 @@ export const calculateAllXIRR = async (
     const spyTxs = await simulateBenchmark(
       positions,
       closedPositions,
-      'SPY',
-      spyPrice
+      spyPrice,
+      spyHistory
     );
     const spyResult = spyTxs.length > 1 ? await xirr(spyTxs) : 0;
 
     const gldTxs = await simulateBenchmark(
       positions,
       closedPositions,
-      'GLD',
-      gldPrice
+      gldPrice,
+      gldHistory
     );
     const gldResult = gldTxs.length > 1 ? await xirr(gldTxs) : 0;
 

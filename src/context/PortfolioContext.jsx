@@ -18,6 +18,7 @@ import {
   fetchCurrentPrices,
   fetchBetaValues,
   fetchAvailableCash,
+  fetchHistoricalPrices,
 } from '../utils/schwabApi';
 import { calculateAllXIRR } from '../utils/xirr';
 import { getCategoricBeta } from '../utils/betaCalculator';
@@ -42,6 +43,7 @@ export const PortfolioProvider = ({ children }) => {
   const [isPositionsLoading, setIsPositionsLoading] = useState(true);
   const [isMarketDataLoading, setIsMarketDataLoading] = useState(true);
   const [realizedGain, setRealizedGain] = useState(0);
+  const [realizedGainPercent, setRealizedGainPercent] = useState(0);
   const [xirrValues, setXirrValues] = useState({
     portfolio: 0,
     spy: 0,
@@ -53,6 +55,38 @@ export const PortfolioProvider = ({ children }) => {
 
   const [absoluteBetaCategory, setAbsoluteBetaCategory] = useState('N/A');
   const [isSchwabConnected, setIsSchwabConnected] = useState(false);
+  const [matchedTradeStats, setMatchedTradeStats] = useState({
+    totalActualValue: 0,
+    totalBenchmarkValue: 0,
+    totalAlphaDollars: 0,
+    totalAlphaPercent: 0,
+  });
+  const [spyHistory, setSpyHistory] = useState([]);
+  const [gldHistory, setGldHistory] = useState([]);
+
+  useEffect(() => {
+    const fetchBenchmarkHistories = async () => {
+      if (isSchwabConnected) {
+        try {
+          const today = new Date().toISOString().split('T')[0];
+          const [spy, gld] = await Promise.all([
+            fetchHistoricalPrices('SPY', today),
+            fetchHistoricalPrices('GLD', today),
+          ]);
+
+          setSpyHistory((spy && spy.candles) || []);
+          setGldHistory((gld && gld.candles) || []);
+        } catch (error) {
+          console.error('Error fetching benchmark histories:', error);
+          setSpyHistory([]);
+          setGldHistory([]);
+        }
+      }
+    };
+
+    fetchBenchmarkHistories();
+  }, [isSchwabConnected]);
+
 
   const refreshMarketData = useCallback(async () => {
     if (!isSchwabConnected) {
@@ -204,15 +238,23 @@ export const PortfolioProvider = ({ children }) => {
   useEffect(() => {
     if (!closedPositions || closedPositions.length === 0) {
       setRealizedGain(0);
+      setRealizedGainPercent(0);
       return;
     }
 
-    const totalGain = closedPositions.reduce((acc, pos) => {
-      const gain = (pos.exitPrice - pos.fillPrice) * pos.amount;
-      return acc + gain;
-    }, 0);
+    const { totalGain, totalCost } = closedPositions.reduce(
+      (acc, pos) => {
+        const gain = (pos.exitPrice - pos.fillPrice) * pos.amount;
+        const cost = pos.fillPrice * pos.amount;
+        acc.totalGain += gain;
+        acc.totalCost += cost;
+        return acc;
+      },
+      { totalGain: 0, totalCost: 0 }
+    );
 
     setRealizedGain(totalGain);
+    setRealizedGainPercent(totalCost === 0 ? 0 : totalGain / totalCost);
   }, [closedPositions]);
 
   useEffect(() => {
@@ -371,28 +413,98 @@ export const PortfolioProvider = ({ children }) => {
   }, [aggregatedPositions, availableCash]);
 
   useEffect(() => {
+    const findPriceInHistory = (date) => {
+      if (!spyHistory || spyHistory.length === 0) return null;
+      
+      const targetTime = new Date(date).setHours(0, 0, 0, 0);
+  
+      let closestCandle = null;
+      for (const candle of spyHistory) {
+        const candleTime = new Date(candle.datetime).setHours(0, 0, 0, 0);
+        if (candleTime <= targetTime) {
+          closestCandle = candle;
+        } else {
+          break;
+        }
+      }
+      return closestCandle ? closestCandle.close : null;
+    };
+
+    const calculateMatchedTrade = () => {
+      if (!isSchwabConnected || spyHistory.length === 0 || (positions.length === 0 && closedPositions.length === 0)) {
+        return;
+      }
+
+      const allTrades = [
+        ...positions.map(p => ({ ...p, isOpen: true })),
+        ...closedPositions.map(p => ({ ...p, isOpen: false }))
+      ];
+
+      let totalActualValue = 0;
+      let totalBenchmarkValue = 0;
+
+      for (const trade of allTrades) {
+        const costBasis = trade.fillPrice * trade.amount;
+        const startDate = trade.date;
+        const endDate = trade.isOpen ? new Date().toISOString().split('T')[0] : trade.exitDate;
+
+        const pStart = findPriceInHistory(startDate);
+        const pEnd = findPriceInHistory(endDate);
+
+        if (pStart === null || pEnd === null || pStart === 0) {
+          continue;
+        }
+
+        const multiplier = pEnd / pStart;
+        const benchmarkEndingValue = costBasis * multiplier;
+
+        let actualValue;
+        if (trade.isOpen) {
+          actualValue = (priceData[trade.ticker] || 0) * trade.amount;
+        } else {
+          actualValue = trade.exitPrice * trade.amount;
+        }
+
+        totalActualValue += actualValue;
+        totalBenchmarkValue += benchmarkEndingValue;
+      }
+
+      const totalAlphaDollars = totalActualValue - totalBenchmarkValue;
+      const totalAlphaPercent = totalBenchmarkValue === 0 ? 0 : (totalActualValue / totalBenchmarkValue) - 1;
+
+      setMatchedTradeStats({
+        totalActualValue,
+        totalBenchmarkValue,
+        totalAlphaDollars,
+        totalAlphaPercent,
+      });
+    };
+
+    calculateMatchedTrade();
+  }, [positions, closedPositions, priceData, isSchwabConnected, spyHistory]);
+
+  useEffect(() => {
     if (
       !user ||
       (positions.length === 0 && closedPositions.length === 0) ||
       !priceData.SPY ||
-      !priceData.GLD
+      !priceData.GLD ||
+      spyHistory.length === 0 ||
+      gldHistory.length === 0
     ) {
       return;
     }
 
     const runXirr = async () => {
       const portfolioValueForXirr = portfolioStats.totalValue - Object.values(availableCash).reduce((sum, cash) => sum + cash, 0);
-      console.log('Calculating XIRR with:', {
-        portfolioValueForXirr,
-        spyPrice: priceData.SPY,
-        gldPrice: priceData.GLD,
-      });
       const rates = await calculateAllXIRR(
         positions,
         closedPositions,
         portfolioValueForXirr,
         priceData.SPY,
-        priceData.GLD
+        priceData.GLD,
+        spyHistory,
+        gldHistory,
       );
       setXirrValues(rates);
     };
@@ -405,6 +517,8 @@ export const PortfolioProvider = ({ children }) => {
     portfolioStats.totalValue,
     priceData.SPY,
     priceData.GLD,
+    spyHistory,
+    gldHistory,
   ]);
 
   useEffect(() => {
@@ -443,6 +557,7 @@ export const PortfolioProvider = ({ children }) => {
     portfolioStats,
     xirrValues,
     realizedGain,
+    realizedGainPercent,
     isLoading: isPositionsLoading || isMarketDataLoading,
     weightedBeta,
     weightedAbsoluteBeta,
@@ -452,6 +567,9 @@ export const PortfolioProvider = ({ children }) => {
     isSchwabConnected,
     refreshMarketData,
     availableCash,
+    matchedTradeStats,
+    spyHistory,
+    gldHistory,
   };
 
   return (

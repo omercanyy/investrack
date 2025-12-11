@@ -31,6 +31,7 @@ const DashboardPage = () => {
     portfolioStats,
     xirrValues,
     realizedGain,
+    realizedGainPercent,
     weightedBeta,
     weightedAbsoluteBeta,
     betaCategory,
@@ -38,6 +39,7 @@ const DashboardPage = () => {
     betaDistribution,
     availableCash,
     priceData,
+    matchedTradeStats,
   } = usePortfolio();
 
   const totalCash = Object.values(availableCash).reduce((sum, cash) => sum + cash, 0);
@@ -51,6 +53,7 @@ const DashboardPage = () => {
   }
 
   const isPositive = portfolioStats.totalGainLoss > 0;
+  const isAlphaPositive = matchedTradeStats.totalAlphaDollars > 0;
 
   const getXirrColor = (portfolio, spy, gld) => {
     const values = [
@@ -77,7 +80,9 @@ const DashboardPage = () => {
           primaryValue={formatCurrency(portfolioStats.totalValue)}
         >
           <p className={`text-sm ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
-            {isPositive ? '+' : ''}{formatCurrency(portfolioStats.totalGainLoss)}
+            {isPositive ? '+' : ''}{formatCurrency(portfolioStats.totalGainLoss)} (
+            {isPositive ? '+' : ''}
+            {(portfolioStats.totalGainLossPercent * 100).toFixed(2)}%)
           </p>
         </StatCard>
         <StatCard
@@ -88,7 +93,16 @@ const DashboardPage = () => {
           primaryValueColor={
             realizedGain >= 0 ? 'text-green-500' : 'text-red-500'
           }
-        />
+        >
+          <p
+            className={`text-sm ${
+              realizedGain >= 0 ? 'text-green-500' : 'text-red-500'
+            }`}
+          >
+            ({realizedGain >= 0 ? '+' : ''}
+            {(realizedGainPercent * 100).toFixed(2)}%)
+          </p>
+        </StatCard>
         <StatCard
           title="Available Cash"
           primaryValue={formatCurrency(totalCash)}
@@ -130,6 +144,15 @@ const DashboardPage = () => {
               className={`w-3 h-3 rounded-full ${getBetaCategoryClasses(absoluteBetaCategory).badge}`}
             ></div>
           </div>
+        </StatCard>
+        <StatCard
+          title="Alpha vs SPY (PME)"
+          primaryValue={`${isAlphaPositive ? '+' : '-'}${formatCurrency(Math.abs(matchedTradeStats.totalAlphaDollars))}`}
+          primaryValueColor={isAlphaPositive ? 'text-green-500' : 'text-red-500'}
+        >
+          <p className={`text-sm ${isAlphaPositive ? 'text-green-500' : 'text-red-500'}`}>
+            ({isAlphaPositive ? '+' : ''}{(matchedTradeStats.totalAlphaPercent * 100).toFixed(2)}%)
+          </p>
         </StatCard>
       </div>
 
