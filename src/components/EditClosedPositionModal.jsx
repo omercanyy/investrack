@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
-import { ACCOUNT_TYPES } from '../constants/accounts';
+import { usePortfolio } from '../context/PortfolioContext';
 
 const EditClosedPositionModal = ({ isOpen, onClose, onConfirm, lot }) => {
+  const { strategies, industries, strategyDefinitions, industryDefinitions } = usePortfolio();
+
   const [ticker, setTicker] = useState('');
   const [amount, setAmount] = useState('');
   const [fillPrice, setFillPrice] = useState('');
   const [date, setDate] = useState('');
   const [exitPrice, setExitPrice] = useState('');
   const [exitDate, setExitDate] = useState('');
-  const [account, setAccount] = useState('');
+  const [strategy, setStrategy] = useState('');
+  const [industry, setIndustry] = useState('');
 
   useEffect(() => {
     if (lot) {
@@ -19,9 +22,10 @@ const EditClosedPositionModal = ({ isOpen, onClose, onConfirm, lot }) => {
       setDate(lot.date);
       setExitPrice(lot.exitPrice);
       setExitDate(lot.exitDate);
-      setAccount(lot.account);
+      setStrategy(strategies[lot.ticker]?.strategy || '');
+      setIndustry(industries[lot.ticker]?.industry || '');
     }
-  }, [lot]);
+  }, [lot, strategies, industries]);
 
   const handleConfirm = () => {
     onConfirm({
@@ -32,7 +36,8 @@ const EditClosedPositionModal = ({ isOpen, onClose, onConfirm, lot }) => {
       date,
       exitPrice: parseFloat(exitPrice),
       exitDate,
-      account,
+      strategy,
+      industry,
     });
   };
 
@@ -114,19 +119,17 @@ const EditClosedPositionModal = ({ isOpen, onClose, onConfirm, lot }) => {
           />
         </div>
         <div>
-          <label htmlFor="account" className="block text-sm font-medium text-gray-700">
-            Account
-          </label>
-          <select
-            id="account"
-            value={account}
-            onChange={(e) => setAccount(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-          >
-            <option value="">Select Account</option>
-            {Object.entries(ACCOUNT_TYPES).map(([id, name]) => (
-              <option key={id} value={id}>{name}</option>
-            ))}
+          <label htmlFor="strategy" className="block text-sm font-medium text-gray-700">Strategy</label>
+          <select id="strategy" value={strategy} onChange={(e) => setStrategy(e.target.value)} className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            <option value="">Unassigned</option>
+            {strategyDefinitions.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="industry" className="block text-sm font-medium text-gray-700">Industry</label>
+          <select id="industry" value={industry} onChange={(e) => setIndustry(e.target.value)} className="w-full rounded-md border-gray-300 p-2 text-sm shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            <option value="">Unassigned</option>
+            {industryDefinitions.map((opt) => (<option key={opt} value={opt}>{opt}</option>))}
           </select>
         </div>
       </div>

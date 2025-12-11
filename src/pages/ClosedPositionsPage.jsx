@@ -6,7 +6,8 @@ import ConfirmModal from '../components/ConfirmModal';
 import EditClosedPositionModal from '../components/EditClosedPositionModal';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
-import { doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { doc, deleteDoc, updateDoc, setDoc } from 'firebase/firestore';
+import { ACCOUNT_TYPES } from '../constants/accounts';
 
 const formatCurrency = (value) => {
   if (typeof value !== 'number') {
@@ -39,7 +40,7 @@ const RenderGainLoss = ({ value, formatter = (val) => val }) => {
 
 const ClosedPositionsPage = () => {
   const { user } = useAuth();
-  const { isLoading, closedPositions } = usePortfolio();
+  const { isLoading, closedPositions, strategies, industries } = usePortfolio();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState(null);
@@ -51,16 +52,20 @@ const ClosedPositionsPage = () => {
         const proceeds = pos.amount * pos.exitPrice;
         const gainLoss = proceeds - costBasis;
         const gainLossPercent = costBasis === 0 ? 0 : gainLoss / costBasis;
+        const strategy = strategies[pos.ticker]?.strategy || '';
+        const industry = industries[pos.ticker]?.industry || '';
         return {
           ...pos,
           costBasis,
           proceeds,
           gainLoss,
           gainLossPercent,
+          strategy,
+          industry,
         };
       })
       .sort((a, b) => new Date(b.exitDate) - new Date(a.exitDate));
-  }, [closedPositions]);
+  }, [closedPositions, strategies, industries]);
 
   const handleDeleteClick = (pos) => {
     setSelectedPosition(pos);
@@ -97,16 +102,27 @@ const ClosedPositionsPage = () => {
   const handleConfirmEdit = async (editedLot) => {
     if (!editedLot || !user) return;
     try {
-      const docPath = doc(db, 'users', user.uid, 'closed_positions', editedLot.id);
+      const { id, ticker, amount, fillPrice, date, exitPrice, exitDate, strategy, industry } = editedLot;
+      const docPath = doc(db, 'users', user.uid, 'closed_positions', id);
       await updateDoc(docPath, {
-        ticker: editedLot.ticker,
-        amount: editedLot.amount,
-        fillPrice: editedLot.fillPrice,
-        date: editedLot.date,
-        exitPrice: editedLot.exitPrice,
-        exitDate: editedLot.exitDate,
-        account: editedLot.account,
+        ticker,
+        amount,
+        fillPrice,
+        date,
+        exitPrice,
+        exitDate,
       });
+
+      if (strategy) {
+        const strategyDocPath = doc(db, 'users', user.uid, 'strategies', ticker);
+        await setDoc(strategyDocPath, { strategy });
+      }
+
+      if (industry) {
+        const industryDocPath = doc(db, 'users', user.uid, 'industries', ticker);
+        await setDoc(industryDocPath, { industry });
+      }
+
     } catch (error) {
       console.error('Error updating document: ', error);
     } finally {
@@ -138,9 +154,6 @@ const ClosedPositionsPage = () => {
                 Ticker
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Account
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Amount
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -162,10 +175,13 @@ const ClosedPositionsPage = () => {
                 Proceeds
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Gain ($)
+                Gain
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Gain (%)
+                Strategy
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Industry
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Actions
@@ -184,9 +200,6 @@ const ClosedPositionsPage = () => {
                 <tr key={pos.id}>
                   <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
                     {pos.ticker}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
-                    {pos.account}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
                     {pos.amount}
@@ -212,15 +225,13 @@ const ClosedPositionsPage = () => {
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
                     <RenderGainLoss
                       value={pos.gainLoss}
-                      formatter={formatCurrency}
+                      formatter={(value) => 
+                        `${formatCurrency(value)} (${formatPercentage(pos.gainLossPercent)})`
+                      }
                     />
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm">
-                    <RenderGainLoss
-                      value={pos.gainLossPercent}
-                      formatter={formatPercentage}
-                    />
-                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{pos.strategy}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{pos.industry}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
                     <button
                       onClick={() => handleEditClick(pos)}
